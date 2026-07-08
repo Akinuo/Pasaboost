@@ -180,7 +180,7 @@ function jaccardSimilarity(a: Set<string>, b: Set<string>): number {
 }
 
 async function checkOriginality(
-  supabase: ReturnType<typeof createClient>,
+  supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
   essay: string
 ): Promise<OriginalityResult> {
@@ -225,7 +225,7 @@ async function checkOriginality(
 // ============================================================
 
 export async function POST(req: NextRequest) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
   if (authError || !user) {

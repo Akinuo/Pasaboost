@@ -149,7 +149,7 @@ For grammarIssues, find up to 8 real issues. The "excerpt" MUST be copied charac
 
 export async function POST(req: NextRequest) {
   // ── 1. Verify Supabase session (reads the httpOnly cookie) ──
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
   if (authError || !user) {
