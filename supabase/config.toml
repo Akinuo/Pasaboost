@@ -1,0 +1,26 @@
+> Supabase CLI config for local development (optional).
+> Run `supabase init` normally instead if you want the full generated config —
+> this trimmed version covers what PasaBoost needs.
+
+project_id = "pasaboost"
+
+[api]
+enabled = true
+port = 54321
+
+[db]
+port = 54322
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000/auth/callback"]
+
+[auth.external.google]
+enabled = true
+client_id = "env(GOOGLE_OAUTH_CLIENT_ID)"
+secret = "env(GOOGLE_OAUTH_CLIENT_SECRET)"

@@ -1,0 +1,164 @@
+// ============================================================
+// PasaBoost Application Types
+// These are the "shaped for the UI" types — converted from the
+// raw snake_case Supabase rows by the functions in lib/queries.ts
+// ============================================================
+
+export type ExamType = 'UPCAT' | 'ACET' | 'DCAT' | 'USTET' | 'General'
+
+export type PromptCategory =
+  | 'Social Issues'
+  | 'Science & Technology'
+  | 'Education'
+  | 'Environment'
+  | 'Culture & Identity'
+  | 'Economics'
+  | 'Health'
+  | 'Government & Politics'
+
+export interface UserProfile {
+  id: string
+  displayName: string | null
+  photoUrl: string | null
+  email: string | null
+  leaderboardEnabled: boolean
+  leaderboardAlias: string | null
+  emailNotifications: boolean
+}
+
+export interface UserStats {
+  userId: string
+  totalEssays: number
+  averageScore: number
+  bestScore: number
+  currentStreak: number
+  longestStreak: number
+  lastActivity: Date
+  weeklyGoal: number
+  thisWeekCount: number
+  totalWords: number
+}
+
+export interface EssayDraft {
+  id: string
+  userId: string
+  title: string
+  content: string
+  prompt?: string
+  promptCategory?: PromptCategory
+  examType: ExamType
+  wordCount: number
+  createdAt: Date
+  updatedAt: Date
+  isSubmitted: boolean
+  scoreId?: string
+}
+
+export type ScoreDimension = 'Content' | 'Organization' | 'Grammar' | 'Coherence' | 'Argument'
+
+export interface RubricScore {
+  dimension: ScoreDimension
+  score: number
+  maxScore: 20
+  feedback: string
+  strengths: string[]
+  weaknesses: string[]
+}
+
+export interface ParagraphRewrite {
+  original: string
+  rewritten: string
+  explanation: string
+  improvements: string[]
+}
+
+export type ScoreBand =
+  | 'Excellent (90-100)'
+  | 'Proficient (75-89)'
+  | 'Developing (60-74)'
+  | 'Beginning (45-59)'
+  | 'Needs Improvement (<45)'
+
+export interface EssayScore {
+  id: string
+  essayId?: string
+  userId: string
+  essay: string
+  prompt?: string
+  examType: ExamType
+  totalScore: number
+  rubricScores: RubricScore[]
+  overallFeedback: string
+  strengths: string[]
+  weaknesses: string[]
+  suggestions: string[]
+  paragraphRewrites: ParagraphRewrite[]
+  estimatedBand: ScoreBand
+  readabilityScore?: number
+  vocabularyDiversity?: number
+  createdAt: Date
+  modelVersion?: string
+}
+
+export interface ScoreDataPoint {
+  date: string
+  totalScore: number
+  content: number
+  organization: number
+  grammar: number
+  coherence: number
+  argument: number
+  essayId: string
+  examType: ExamType
+}
+
+export interface DimensionProgress {
+  dimension: ScoreDimension
+  firstScore: number
+  latestScore: number
+  improvement: number
+  trend: 'up' | 'down' | 'stable'
+}
+
+export interface WritingPrompt {
+  id: string
+  text: string
+  category: PromptCategory
+  examType: ExamType[]
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced'
+  keywords: string[]
+  tip?: string
+  isDaily?: boolean
+  date?: string
+}
+
+export interface LeaderboardEntry {
+  rank: number
+  alias: string
+  averageScore: number
+  essayCount: number
+  bestScore: number
+  improvement: number
+  examType?: ExamType
+  badge?: string
+}
+
+export interface ScoreEssayResponse {
+  success: boolean
+  score?: Omit<EssayScore, 'id' | 'createdAt'>
+  error?: string
+  rateLimitRemaining?: number
+}
+
+export interface LoginFormValues {
+  email: string
+  password: string
+}
+
+export interface RegisterFormValues {
+  displayName: string
+  email: string
+  password: string
+  confirmPassword: string
+  agreeToTerms: true
+}
