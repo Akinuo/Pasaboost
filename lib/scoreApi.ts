@@ -20,7 +20,23 @@ export async function scoreEssayViaAPI(params: {
       credentials: 'include', // send the Supabase auth cookie
     })
 
-    const data = await res.json()
+    const raw = await res.text()
+    if (!raw) {
+      return {
+        success: false,
+        error: res.ok
+          ? 'The scoring service returned an empty response. Try again in a moment.'
+          : `Scoring service error (HTTP ${res.status}).`,
+      }
+    }
+
+    let data: any
+    try {
+      data = JSON.parse(raw)
+    } catch {
+      return { success: false, error: `Unexpected response from server (HTTP ${res.status}). Please try again.` }
+    }
+
     if (!res.ok) {
       return { success: false, error: data.error || `HTTP ${res.status}` }
     }
