@@ -65,8 +65,17 @@ Respond with ONLY valid JSON (no markdown, no explanation outside JSON):
       "explanation": "<why this rewrite is better>",
       "improvements": ["<improvement 1>", "<improvement 2>", "<improvement 3>"]
     }
+  ],
+  "grammarIssues": [
+    {
+      "type": "<one of: grammar, spelling, punctuation, style>",
+      "excerpt": "<verbatim short snippet (3-10 words) copied EXACTLY from the essay containing the issue>",
+      "issue": "<short description of what's wrong>",
+      "suggestion": "<how to fix it>"
+    }
   ]
-}`
+}
+For grammarIssues, find up to 8 real issues. The "excerpt" MUST be copied character-for-character from the essay so it can be located and highlighted — do not paraphrase it.`
 
   const userMessage = prompt ? `Essay Prompt: ${prompt}\n\nStudent Essay:\n${essay}` : `Student Essay:\n${essay}`
 
@@ -118,6 +127,17 @@ Respond with ONLY valid JSON (no markdown, no explanation outside JSON):
     weaknesses: Array.isArray(parsed.weaknesses) ? parsed.weaknesses : [],
     suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions.slice(0, 5) : [],
     paragraphRewrites: Array.isArray(parsed.paragraphRewrites) ? parsed.paragraphRewrites.slice(0, 2) : [],
+    grammarIssues: Array.isArray(parsed.grammarIssues)
+      ? parsed.grammarIssues
+          .filter((g: any) => g && typeof g.excerpt === 'string' && essay.includes(g.excerpt))
+          .slice(0, 8)
+          .map((g: any) => ({
+            type: ['grammar', 'spelling', 'punctuation', 'style'].includes(g.type) ? g.type : 'grammar',
+            excerpt: g.excerpt,
+            issue: g.issue || '',
+            suggestion: g.suggestion || '',
+          }))
+      : [],
     estimatedBand: band,
     modelVersion: 'llama-3.3-70b-versatile',
   }

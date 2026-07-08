@@ -93,7 +93,21 @@ export function generateMockScore(
     readabilityScore: Math.round(60 + Math.random() * 30),
     vocabularyDiversity: Math.round(45 + Math.random() * 40),
     modelVersion: 'demo-mock-v1',
+    grammarIssues: generateMockGrammarIssues(essay),
   }
+}
+
+function generateMockGrammarIssues(essay: string): { type: 'grammar' | 'spelling' | 'punctuation' | 'style'; excerpt: string; issue: string; suggestion: string }[] {
+  const sentences = essay.split(/(?<=[.!?])\s+/).filter((s) => s.trim().length > 8)
+  const issues: { type: 'grammar' | 'spelling' | 'punctuation' | 'style'; excerpt: string; issue: string; suggestion: string }[] = []
+  for (const s of sentences.slice(0, 3)) {
+    if (/\bvery\b/i.test(s)) {
+      issues.push({ type: 'style', excerpt: s.trim().slice(0, 60), issue: 'Overused intensifier "very"', suggestion: 'Use a stronger, more specific word instead.' })
+    } else if (/\bi\b/.test(s)) {
+      issues.push({ type: 'grammar', excerpt: s.trim().slice(0, 60), issue: 'Lowercase "i" should be capitalized', suggestion: 'Capitalize "I" when referring to yourself.' })
+    }
+  }
+  return issues.slice(0, 3)
 }
 
 function getContentFeedback(score: number): string {

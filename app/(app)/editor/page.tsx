@@ -5,14 +5,17 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Save, Send, Trash2, ChevronDown, Clock, FileText, Lightbulb,
-  AlertCircle, CheckCircle, Loader2, RotateCcw,
+  AlertCircle, CheckCircle, Loader2, RotateCcw, ShieldCheck,
+  Sparkles, X, ScanSearch,
 } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { createClient } from '@/lib/supabase/client'
 import { saveDraft, updateDraft, getUserDrafts, deleteDraft, getDraft } from '@/lib/queries'
 import { scoreEssayViaAPI, generateMockScore } from '@/lib/scoreApi'
+import { checkIntegrityViaAPI } from '@/lib/integrityApi'
+import { generateOutlineViaAPI } from '@/lib/outlineApi'
 import { countWords, debounce, EXAM_DESCRIPTIONS } from '@/lib/utils'
-import type { ExamType, EssayDraft } from '@/types'
+import type { ExamType, EssayDraft, AIDetectionResult, OriginalityResult, EssayOutline } from '@/types'
 
 const EXAM_TYPES: ExamType[] = ['UPCAT', 'ACET', 'DCAT', 'USTET', 'General']
 const MIN_WORDS = 50
@@ -38,6 +41,17 @@ function EssayEditorInner() {
   const [showPromptPanel, setShowPromptPanel] = useState(false)
   const [drafts, setDrafts] = useState<EssayDraft[]>([])
   const [showDrafts, setShowDrafts] = useState(false)
+
+  const [showOutlinePanel, setShowOutlinePanel] = useState(false)
+  const [outline, setOutline] = useState<EssayOutline | null>(null)
+  const [outlineLoading, setOutlineLoading] = useState(false)
+  const [outlineError, setOutlineError] = useState<string | null>(null)
+
+  const [showIntegrityPanel, setShowIntegrityPanel] = useState(false)
+  const [integrityLoading, setIntegrityLoading] = useState(false)
+  const [integrityError, setIntegrityError] = useState<string | null>(null)
+  const [aiDetection, setAiDetection] = useState<AIDetectionResult | null>(null)
+  const [originality, setOriginality] = useState<OriginalityResult | null>(null)
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const wordCount = countWords(content)
@@ -123,6 +137,53 @@ function EssayEditorInner() {
     }
   }
 
+  const handleGetOutline = async () => {
+    if (!prompt.trim() || prompt.trim().length < 5) {
+      setOutlineError('Add a writing prompt above first (at least a few words) so the assistant knows what to outline.')
+      setShowOutlinePanel(true)
+      return
+    }
+    setShowOutlinePanel(true)
+    setOutlineLoading(true)
+    setOutlineError(null)
+    try {
+      const res = await generateOutlineViaAPI({ prompt, examType })
+      if (res.success && res.outline) {
+        setOutline(res.outline)
+      } else {
+        setOutlineError(res.error || 'Failed to generate an outline.')
+      }
+    } catch (err) {
+      setOutlineError(err instanceof Error ? err.message : 'Failed to generate an outline.')
+    } finally {
+      setOutlineLoading(false)
+    }
+  }
+
+  const handleCheckIntegrity = async () => {
+    if (wordCount < MIN_WORDS) {
+      setIntegrityError(`Write at least ${MIN_WORDS} words before running this check.`)
+      setShowIntegrityPanel(true)
+      return
+    }
+    setShowIntegrityPanel(true)
+    setIntegrityLoading(true)
+    setIntegrityError(null)
+    try {
+      const res = await checkIntegrityViaAPI(content)
+      if (res.success) {
+        setAiDetection(res.aiDetection ?? null)
+        setOriginality(res.originality ?? null)
+      } else {
+        setIntegrityError(res.error || 'Failed to run the check.')
+      }
+    } catch (err) {
+      setIntegrityError(err instanceof Error ? err.message : 'Failed to run the check.')
+    } finally {
+      setIntegrityLoading(false)
+    }
+  }
+
   const handleSubmit = async () => {
     if (!user || wordCount < MIN_WORDS) return
     setIsSubmitting(true)
@@ -130,8 +191,12 @@ function EssayEditorInner() {
 
     try {
       // Try the real backend (Next.js API route → Groq) first.
-      const res = await scoreEssayViaAPI({ essay: content, prompt, examType })
+      const [res, integrityRes] = await Promise.all([
+        scoreEssayViaAPI({ essay: content, prompt, examType }),
+        checkIntegrityViaAPI(content),
+      ])
       const scoreData = res.success && res.score ? res.score : generateMockScore(content, prompt, examType)
+      const integrity = integrityRes.success ? integrityRes : null
 
       // Save draft as submitted
       let draftDocId = currentDraftId
@@ -161,7 +226,17 @@ function EssayEditorInner() {
           readability_score: scoreData.readabilityScore,
           vocabulary_diversity: scoreData.vocabularyDiversity,
           model_version: scoreData.modelVersion,
-        })
+          grammar_issues: (scoreData.grammarIssues ?? []) as any,
+          ai_likelihood: integrity?.aiDetection?.likelihood,
+          ai_verdict: integrity?.aiDetection?.verdict,
+          ai_indicators: (integrity?.aiDetection?.indicators ?? []) as any,
+          ai_explanation: integrity?.aiDetection?.explanation,
+          originality_score: integrity?.originality?.score,
+          originality_flagged: integrity?.originality?.flagged,
+          originality_note: integrity?.originality?.note,
+          originality_matched_essay_id: integrity?.originality?.matchedEssayId,
+          originality_similarity_percent: integrity?.originality?.similarityPercent,
+        } as any)
         .select('id')
         .single()
 
@@ -262,6 +337,11 @@ function EssayEditorInner() {
             Save
           </button>
 
+          <button onClick={handleCheckIntegrity} disabled={wordCount < MIN_WORDS} className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border border-input bg-background hover:bg-accent transition-colors disabled:opacity-40" title="Check for AI-generated text and compare against your past essays">
+            <ScanSearch size={14} />
+            Check AI / Originality
+          </button>
+
           {currentDraftId && (
             <button onClick={handleDeleteDraft} className="p-2 text-sm rounded-lg border border-input bg-background hover:bg-destructive/10 hover:text-destructive transition-colors">
               <Trash2 size={14} />
@@ -279,11 +359,17 @@ function EssayEditorInner() {
       </div>
 
       <div className="mb-4">
-        <button onClick={() => setShowPromptPanel(!showPromptPanel)} className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-          <Lightbulb size={15} className="text-amber-500" />
-          {prompt ? 'Essay Prompt' : 'Add a writing prompt (optional)'}
-          <ChevronDown size={13} className={`transition-transform ${showPromptPanel ? 'rotate-180' : ''}`} />
-        </button>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <button onClick={() => setShowPromptPanel(!showPromptPanel)} className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            <Lightbulb size={15} className="text-amber-500" />
+            {prompt ? 'Essay Prompt' : 'Add a writing prompt (optional)'}
+            <ChevronDown size={13} className={`transition-transform ${showPromptPanel ? 'rotate-180' : ''}`} />
+          </button>
+          <button onClick={handleGetOutline} className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-input bg-background hover:bg-accent text-muted-foreground hover:text-foreground transition-colors">
+            <Sparkles size={13} className="text-indigo-500" />
+            Outline Help
+          </button>
+        </div>
         <AnimatePresence>
           {showPromptPanel && (
             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
@@ -332,6 +418,130 @@ function EssayEditorInner() {
           </div>
         </motion.div>
       )}
+
+      <AnimatePresence>
+        {showOutlinePanel && (
+          <motion.div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowOutlinePanel(false)}>
+            <motion.div className="bg-card border border-border rounded-2xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-y-auto" initial={{ scale: 0.96, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.96, opacity: 0 }} onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between px-5 py-4 border-b border-border sticky top-0 bg-card">
+                <h2 className="font-display font-bold text-foreground flex items-center gap-2">
+                  <Sparkles size={16} className="text-indigo-500" />
+                  Outline Assistant
+                </h2>
+                <button onClick={() => setShowOutlinePanel(false)} className="p-1.5 rounded-lg hover:bg-accent transition-colors"><X size={16} /></button>
+              </div>
+              <div className="p-5">
+                {outlineLoading && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground py-8 justify-center">
+                    <Loader2 size={16} className="animate-spin" /> Brainstorming structure ideas…
+                  </div>
+                )}
+                {!outlineLoading && outlineError && (
+                  <p className="text-sm text-destructive">{outlineError}</p>
+                )}
+                {!outlineLoading && !outlineError && outline && (
+                  <div className="space-y-4">
+                    <p className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-3">
+                      This is structure only — write every sentence yourself. Copy-pasting AI text will likely get flagged by the AI checker and won't reflect your real writing skill.
+                    </p>
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">Possible Thesis Angle</p>
+                      <p className="text-sm text-foreground bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">{outline.thesisSuggestion}</p>
+                    </div>
+                    {outline.sections.map((s, i) => (
+                      <div key={i}>
+                        <p className="text-sm font-semibold text-foreground mb-1">{s.title}</p>
+                        <ul className="space-y-1">
+                          {s.points.map((pt, j) => (
+                            <li key={j} className="flex items-start gap-2 text-sm text-muted-foreground">
+                              <span className="w-1 h-1 rounded-full bg-indigo-400 mt-2 flex-shrink-0" />{pt}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                    {outline.transitionTips.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">Transition Tips</p>
+                        <div className="flex flex-wrap gap-2">
+                          {outline.transitionTips.map((t, i) => (
+                            <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-indigo-100 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">{t}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showIntegrityPanel && (
+          <motion.div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowIntegrityPanel(false)}>
+            <motion.div className="bg-card border border-border rounded-2xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-y-auto" initial={{ scale: 0.96, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.96, opacity: 0 }} onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between px-5 py-4 border-b border-border sticky top-0 bg-card">
+                <h2 className="font-display font-bold text-foreground flex items-center gap-2">
+                  <ShieldCheck size={16} className="text-emerald-500" />
+                  AI &amp; Originality Check
+                </h2>
+                <button onClick={() => setShowIntegrityPanel(false)} className="p-1.5 rounded-lg hover:bg-accent transition-colors"><X size={16} /></button>
+              </div>
+              <div className="p-5 space-y-5">
+                {integrityLoading && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground py-8 justify-center">
+                    <Loader2 size={16} className="animate-spin" /> Analyzing writing patterns…
+                  </div>
+                )}
+                {!integrityLoading && integrityError && (
+                  <p className="text-sm text-destructive">{integrityError}</p>
+                )}
+                {!integrityLoading && !integrityError && aiDetection && (
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-semibold text-foreground">AI-Generated Text Likelihood</p>
+                      <span className="text-sm font-bold text-foreground">{aiDetection.likelihood}%</span>
+                    </div>
+                    <div className="h-2 bg-muted rounded-full overflow-hidden mb-2">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${aiDetection.likelihood}%`,
+                          backgroundColor: aiDetection.likelihood >= 65 ? '#ef4444' : aiDetection.likelihood >= 35 ? '#f59e0b' : '#10b981',
+                        }}
+                      />
+                    </div>
+                    <p className="text-xs font-medium text-foreground mb-2">{aiDetection.verdict}</p>
+                    <p className="text-sm text-muted-foreground mb-3">{aiDetection.explanation}</p>
+                    {aiDetection.indicators.length > 0 && (
+                      <ul className="space-y-1.5">
+                        {aiDetection.indicators.map((ind, i) => (
+                          <li key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
+                            <span className="w-1 h-1 rounded-full bg-muted-foreground mt-1.5 flex-shrink-0" />{ind}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <p className="mt-3 text-[11px] text-muted-foreground/70 italic">This is a probabilistic estimate based on writing-style patterns, not proof of AI authorship.</p>
+                  </div>
+                )}
+                {!integrityLoading && !integrityError && originality && (
+                  <div className="pt-4 border-t border-border">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-semibold text-foreground">Originality vs. Your Past Essays</p>
+                      <span className="text-sm font-bold text-foreground">{originality.score}/100</span>
+                    </div>
+                    <p className={`text-sm ${originality.flagged ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'}`}>{originality.note}</p>
+                    <p className="mt-2 text-[11px] text-muted-foreground/70 italic">Checks only against your own previous submissions on PasaBoost — not a full internet plagiarism scan.</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {isSubmitting && (

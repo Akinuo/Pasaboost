@@ -1,20 +1,21 @@
 'use client'
 
-import { use, useEffect, useState } from 'react'
+import { use, useEffect, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { ArrowLeft, CheckCircle, XCircle, Lightbulb, ArrowUpDown, Star, PenLine, Share2, Download } from 'lucide-react'
+import { ArrowLeft, CheckCircle, XCircle, Lightbulb, ArrowUpDown, Star, PenLine, Share2, Download, ShieldCheck, ShieldAlert, ShieldQuestion } from 'lucide-react'
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, Tooltip } from 'recharts'
 import { createClient } from '@/lib/supabase/client'
 import { getScore } from '@/lib/queries'
 import { getScoreColor, getScoreBgColor, getScoreLabel, getDimensionColor, getDimensionIcon, formatDateTime } from '@/lib/utils'
-import type { EssayScore, RubricScore } from '@/types'
+import { exportScoreToPDF } from '@/lib/pdfExport'
+import type { EssayScore, RubricScore, GrammarIssue } from '@/types'
 
 export default function ScoreResultPage({ params }: { params: Promise<{ scoreId: string }> }) {
   const { scoreId } = use(params)
   const [score, setScore] = useState<EssayScore | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'overview' | 'feedback' | 'rewrites' | 'essay'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'feedback' | 'rewrites' | 'essay' | 'integrity'>('overview')
 
   useEffect(() => {
     const supabase = createClient()
@@ -40,6 +41,7 @@ export default function ScoreResultPage({ params }: { params: Promise<{ scoreId:
     { id: 'feedback', label: 'Feedback' },
     { id: 'rewrites', label: 'Rewrites' },
     { id: 'essay', label: 'My Essay' },
+    { id: 'integrity', label: 'Integrity' },
   ] as const
 
   return (
@@ -265,20 +267,106 @@ export default function ScoreResultPage({ params }: { params: Promise<{ scoreId:
                 <p className="text-sm text-foreground">{score.prompt}</p>
               </div>
             )}
+            {score.grammarIssues && score.grammarIssues.length > 0 && (
+              <div className="mb-4 flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="inline-block w-3 h-3 rounded-sm bg-amber-200 dark:bg-amber-900/60 border border-amber-400 dark:border-amber-700" />
+                Highlighted text has a flagged grammar/style issue — hover to see the suggestion.
+              </div>
+            )}
             <div className="prose prose-sm dark:prose-invert max-w-none">
               {score.essay.split('\n\n').map((para, i) => (
-                <p key={i} className="mb-4 text-foreground leading-relaxed">{para}</p>
+                <p key={i} className="mb-4 text-foreground leading-relaxed">
+                  <HighlightedParagraph text={para} issues={score.grammarIssues ?? []} />
+                </p>
               ))}
             </div>
+          </motion.div>
+        )}
+
+        {activeTab === 'integrity' && (
+          <motion.div className="space-y-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            {score.aiDetection ? (
+              <div className="bg-card border border-border rounded-2xl p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  {score.aiDetection.likelihood >= 65 ? (
+                    <ShieldAlert size={18} className="text-red-500" />
+                  ) : score.aiDetection.likelihood >= 35 ? (
+                    <ShieldQuestion size={18} className="text-amber-500" />
+                  ) : (
+                    <ShieldCheck size={18} className="text-emerald-500" />
+                  )}
+                  <h3 className="font-display font-bold text-foreground">AI-Generated Text Check</h3>
+                </div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-muted-foreground">Likelihood essay was AI-generated</span>
+                  <span className="text-lg font-bold text-foreground">{score.aiDetection.likelihood}%</span>
+                </div>
+                <div className="h-2.5 bg-muted rounded-full overflow-hidden mb-3">
+                  <motion.div
+                    className="h-full rounded-full"
+                    style={{ backgroundColor: score.aiDetection.likelihood >= 65 ? '#ef4444' : score.aiDetection.likelihood >= 35 ? '#f59e0b' : '#10b981' }}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${score.aiDetection.likelihood}%` }}
+                    transition={{ duration: 0.8 }}
+                  />
+                </div>
+                <p className="text-sm font-semibold text-foreground mb-1">{score.aiDetection.verdict}</p>
+                <p className="text-sm text-muted-foreground mb-3">{score.aiDetection.explanation}</p>
+                {score.aiDetection.indicators.length > 0 && (
+                  <ul className="space-y-1.5">
+                    {score.aiDetection.indicators.map((ind, i) => (
+                      <li key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
+                        <span className="w-1 h-1 rounded-full bg-muted-foreground mt-1.5 flex-shrink-0" />{ind}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <p className="mt-3 text-[11px] text-muted-foreground/70 italic">Probabilistic estimate based on writing-style patterns — not proof of AI authorship.</p>
+              </div>
+            ) : (
+              <div className="bg-card border border-border rounded-2xl p-5 text-sm text-muted-foreground">No AI-detection data was recorded for this submission.</div>
+            )}
+
+            {score.originality ? (
+              <div className="bg-card border border-border rounded-2xl p-5">
+                <h3 className="font-display font-bold text-foreground mb-3">Originality vs. Your Past Essays</h3>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-muted-foreground">Originality score</span>
+                  <span className="text-lg font-bold text-foreground">{score.originality.score}/100</span>
+                </div>
+                <p className={`text-sm ${score.originality.flagged ? 'text-amber-600 dark:text-amber-400 font-medium' : 'text-muted-foreground'}`}>{score.originality.note}</p>
+                <p className="mt-3 text-[11px] text-muted-foreground/70 italic">Checks only against your own previous PasaBoost submissions — not a full internet plagiarism scan.</p>
+              </div>
+            ) : (
+              <div className="bg-card border border-border rounded-2xl p-5 text-sm text-muted-foreground">No originality data was recorded for this submission.</div>
+            )}
+
+            {score.grammarIssues && score.grammarIssues.length > 0 && (
+              <div className="bg-card border border-border rounded-2xl p-5">
+                <h3 className="font-display font-bold text-foreground mb-3">Flagged Grammar &amp; Style Issues ({score.grammarIssues.length})</h3>
+                <div className="space-y-3">
+                  {score.grammarIssues.map((g, i) => (
+                    <div key={i} className="p-3 rounded-lg border border-border bg-muted/30">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[10px] uppercase tracking-wide font-semibold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400">{g.type}</span>
+                        <span className="text-xs text-muted-foreground italic truncate">&ldquo;{g.excerpt}&rdquo;</span>
+                      </div>
+                      <p className="text-sm text-foreground">{g.issue}</p>
+                      <p className="text-sm text-emerald-700 dark:text-emerald-400 mt-0.5">→ {g.suggestion}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
       </div>
 
       <div className="flex items-center justify-between mt-8 pt-6 border-t border-border flex-wrap gap-3">
         <div className="flex gap-2">
-          <button onClick={() => window.print()} className="flex items-center gap-2 px-4 py-2 text-sm border border-border rounded-lg bg-background hover:bg-accent transition-colors">
+          <button onClick={() => exportScoreToPDF(score)} className="flex items-center gap-2 px-4 py-2 text-sm border border-border rounded-lg bg-background hover:bg-accent transition-colors">
             <Download size={14} />
-            Export
+            Export PDF
           </button>
           <button onClick={() => { navigator.clipboard.writeText(window.location.href); alert('Link copied!') }} className="flex items-center gap-2 px-4 py-2 text-sm border border-border rounded-lg bg-background hover:bg-accent transition-colors">
             <Share2 size={14} />
@@ -292,6 +380,43 @@ export default function ScoreResultPage({ params }: { params: Promise<{ scoreId:
       </div>
     </div>
   )
+}
+
+function HighlightedParagraph({ text, issues }: { text: string; issues: GrammarIssue[] }) {
+  const relevant = issues.filter((iss) => iss.excerpt && text.includes(iss.excerpt))
+  if (relevant.length === 0) return <>{text}</>
+
+  // Build non-overlapping highlight ranges from excerpt matches.
+  type Range = { start: number; end: number; issue: GrammarIssue }
+  const ranges: Range[] = []
+  for (const issue of relevant) {
+    const idx = text.indexOf(issue.excerpt)
+    if (idx === -1) continue
+    const start = idx
+    const end = idx + issue.excerpt.length
+    const overlaps = ranges.some((r) => start < r.end && end > r.start)
+    if (!overlaps) ranges.push({ start, end, issue })
+  }
+  ranges.sort((a, b) => a.start - b.start)
+
+  const parts: ReactNode[] = []
+  let cursor = 0
+  ranges.forEach((r, i) => {
+    if (r.start > cursor) parts.push(<span key={`t-${i}`}>{text.slice(cursor, r.start)}</span>)
+    parts.push(
+      <mark
+        key={`m-${i}`}
+        title={`${r.issue.issue} → ${r.issue.suggestion}`}
+        className="bg-amber-200/70 dark:bg-amber-900/50 text-inherit rounded px-0.5 cursor-help border-b border-amber-400 dark:border-amber-700"
+      >
+        {text.slice(r.start, r.end)}
+      </mark>
+    )
+    cursor = r.end
+  })
+  if (cursor < text.length) parts.push(<span key="t-end">{text.slice(cursor)}</span>)
+
+  return <>{parts}</>
 }
 
 function DimensionBar({ rubric }: { rubric: RubricScore }) {

@@ -55,6 +55,20 @@ function rowToScore(row: Database['public']['Tables']['scores']['Row']): EssaySc
     vocabularyDiversity: row.vocabulary_diversity ?? undefined,
     createdAt: new Date(row.created_at),
     modelVersion: row.model_version ?? undefined,
+    grammarIssues: ((row as any).grammar_issues as EssayScore['grammarIssues']) ?? [],
+    aiDetection: (row as any).ai_likelihood != null ? {
+      likelihood: (row as any).ai_likelihood,
+      verdict: (row as any).ai_verdict ?? 'Mixed / Possibly AI-Assisted',
+      indicators: ((row as any).ai_indicators as string[]) ?? [],
+      explanation: (row as any).ai_explanation ?? '',
+    } : undefined,
+    originality: (row as any).originality_score != null ? {
+      score: (row as any).originality_score,
+      flagged: !!(row as any).originality_flagged,
+      note: (row as any).originality_note ?? '',
+      matchedEssayId: (row as any).originality_matched_essay_id ?? undefined,
+      similarityPercent: (row as any).originality_similarity_percent ?? undefined,
+    } : undefined,
   }
 }
 

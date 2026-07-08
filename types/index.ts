@@ -98,6 +98,9 @@ export interface EssayScore {
   vocabularyDiversity?: number
   createdAt: Date
   modelVersion?: string
+  grammarIssues?: GrammarIssue[]
+  aiDetection?: AIDetectionResult
+  originality?: OriginalityResult
 }
 
 export interface ScoreDataPoint {
@@ -148,6 +151,73 @@ export interface ScoreEssayResponse {
   score?: Omit<EssayScore, 'id' | 'createdAt'>
   error?: string
   rateLimitRemaining?: number
+}
+
+// ============================================================
+// Grammar highlighting
+// ============================================================
+
+export type GrammarIssueType = 'grammar' | 'spelling' | 'punctuation' | 'style'
+
+export interface GrammarIssue {
+  type: GrammarIssueType
+  excerpt: string // verbatim snippet from the essay this issue refers to (used to locate + highlight it)
+  issue: string // short description of what's wrong
+  suggestion: string // how to fix it
+}
+
+// ============================================================
+// AI-generated text detection
+// ============================================================
+
+export type AIDetectionVerdict = 'Likely Human-Written' | 'Mixed / Possibly AI-Assisted' | 'Likely AI-Generated'
+
+export interface AIDetectionResult {
+  likelihood: number // 0-100, higher = more likely AI-generated
+  verdict: AIDetectionVerdict
+  indicators: string[] // short bullet points explaining the signal (both directions)
+  explanation: string
+}
+
+// ============================================================
+// Originality / self-plagiarism check
+// ============================================================
+
+export interface OriginalityResult {
+  score: number // 0-100, 100 = fully original vs. the student's own history
+  flagged: boolean
+  note: string
+  matchedEssayId?: string
+  matchedEssayTitle?: string
+  similarityPercent?: number
+}
+
+export interface IntegrityCheckResponse {
+  success: boolean
+  aiDetection?: AIDetectionResult
+  originality?: OriginalityResult
+  error?: string
+}
+
+// ============================================================
+// Outline / brainstorm assistant
+// ============================================================
+
+export interface OutlineSection {
+  title: string
+  points: string[]
+}
+
+export interface EssayOutline {
+  thesisSuggestion: string
+  sections: OutlineSection[]
+  transitionTips: string[]
+}
+
+export interface OutlineResponse {
+  success: boolean
+  outline?: EssayOutline
+  error?: string
 }
 
 export interface LoginFormValues {
