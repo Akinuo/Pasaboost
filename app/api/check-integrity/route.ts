@@ -47,7 +47,7 @@ function computeHeuristicScore(essay: string): { score: number; signals: string[
   const sentences = essay.split(/(?<=[.!?])\s+/).filter((s) => s.trim().length > 0)
   const words = essay.split(/\s+/).filter(Boolean)
   const signals: string[] = []
-  let score = 30 // baseline
+  let score = 35 // baseline — starts a bit more suspicious
 
   // Sentence-length burstiness: human writing varies sentence length more.
   if (sentences.length >= 4) {
@@ -56,11 +56,11 @@ function computeHeuristicScore(essay: string): { score: number; signals: string[
     const variance = lens.reduce((a, b) => a + (b - mean) ** 2, 0) / lens.length
     const stdDev = Math.sqrt(variance)
     const coefficientOfVariation = mean > 0 ? stdDev / mean : 0
-    if (coefficientOfVariation < 0.25) {
-      score += 20
+    if (coefficientOfVariation < 0.3) {
+      score += 25
       signals.push('Sentence lengths are unusually uniform (low variation) — a common trait of LLM output.')
     } else if (coefficientOfVariation > 0.55) {
-      score -= 10
+      score -= 8
       signals.push('Sentence lengths vary a lot, which is typical of natural human writing.')
     }
   }
@@ -68,27 +68,41 @@ function computeHeuristicScore(essay: string): { score: number; signals: string[
   // Stock AI-essay phrases
   const lowerEssay = essay.toLowerCase()
   const hits = AI_STOCK_PHRASES.filter((p) => lowerEssay.includes(p))
-  if (hits.length >= 2) {
-    score += Math.min(25, hits.length * 8)
-    signals.push(`Contains ${hits.length} commonly AI-generated stock phrases (e.g. "${hits[0]}").`)
+  if (hits.length >= 1) {
+    score += Math.min(30, hits.length * 10)
+    signals.push(`Contains ${hits.length} commonly AI-generated stock phrase${hits.length > 1 ? 's' : ''} (e.g. "${hits[0]}").`)
   }
 
   // Vocabulary diversity (type-token ratio) — AI text is often smoother/more repetitive at scale,
   // but very LOW diversity can also just mean short/simple writing, so weight this lightly.
   const uniqueWords = new Set(words.map((w) => w.toLowerCase().replace(/[^\w]/g, '')))
   const ttr = words.length > 0 ? uniqueWords.size / words.length : 0
-  if (words.length > 150 && ttr < 0.38) {
-    score += 8
+  if (words.length > 120 && ttr < 0.42) {
+    score += 10
     signals.push('Vocabulary is fairly repetitive for the essay length.')
   }
 
   // Near-total absence of contractions/informal markers in a personal essay
   const hasContractions = /\b(don't|can't|it's|i'm|didn't|wasn't|there's|wouldn't|couldn't)\b/i.test(essay)
-  if (!hasContractions && words.length > 150) {
-    score += 5
+  if (!hasContractions && words.length > 120) {
+    score += 8
     signals.push('No contractions used — slightly more formal/uniform than typical student writing.')
   } else if (hasContractions) {
     score -= 5
+  }
+
+  // Overly balanced/symmetric paragraph structure (near-identical paragraph lengths)
+  // is another common LLM tell — humans rarely write paragraphs of near-equal length.
+  const paragraphs = essay.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean)
+  if (paragraphs.length >= 3) {
+    const pLens = paragraphs.map((p) => p.split(/\s+/).filter(Boolean).length)
+    const pMean = pLens.reduce((a, b) => a + b, 0) / pLens.length
+    const pVariance = pLens.reduce((a, b) => a + (b - pMean) ** 2, 0) / pLens.length
+    const pCV = pMean > 0 ? Math.sqrt(pVariance) / pMean : 0
+    if (pCV < 0.2) {
+      score += 12
+      signals.push('Paragraphs are suspiciously similar in length — often a sign of templated AI structure.')
+    }
   }
 
   return { score: Math.max(0, Math.min(100, score)), signals }
@@ -107,7 +121,7 @@ async function llmAIJudgment(essay: string): Promise<{ likelihood: number; indic
       messages: [
         {
           role: 'system',
-          content: `You analyze student essays for signs of AI-generated (ChatGPT/LLM) authorship, for a Philippine college-entrance essay coaching tool. Be balanced and evidence-based — false accusations harm students. Respond with ONLY valid JSON:
+          content: `You are a strict academic-integrity reviewer analyzing student essays for signs of AI-generated (ChatGPT/LLM) authorship, for a Philippine college-entrance essay coaching tool. Apply rigorous scrutiny — this tool exists specifically to catch AI-assisted submissions, so err toward flagging borderline or ambiguous cases rather than giving the benefit of the doubt. Treat generic phrasing, overly polished/uniform structure, textbook transitions, and a lack of specific personal detail as meaningful evidence of AI authorship, not just neutral style. Still be evidence-based and do not fabricate signals that aren't present. Respond with ONLY valid JSON:
 {"likelihood": <0-100 integer, your estimate that this was AI-generated>, "indicators": ["<short observed signal 1>", "<short observed signal 2>", "<short observed signal 3>"], "explanation": "<1-2 sentence honest, hedged assessment>"}`,
         },
         { role: 'user', content: `Essay to analyze:\n\n${essay}` },
@@ -132,8 +146,8 @@ async function llmAIJudgment(essay: string): Promise<{ likelihood: number; indic
 }
 
 function verdictFromLikelihood(likelihood: number): AIDetectionVerdict {
-  if (likelihood >= 65) return 'Likely AI-Generated'
-  if (likelihood >= 35) return 'Mixed / Possibly AI-Assisted'
+  if (likelihood >= 55) return 'Likely AI-Generated'
+  if (likelihood >= 28) return 'Mixed / Possibly AI-Assisted'
   return 'Likely Human-Written'
 }
 
@@ -203,7 +217,7 @@ async function checkOriginality(
 
   const similarityPercent = bestMatch ? Math.round(bestMatch.similarity * 100) : 0
   const score = 100 - similarityPercent
-  const flagged = similarityPercent >= 55
+  const flagged = similarityPercent >= 40
 
   return {
     score,

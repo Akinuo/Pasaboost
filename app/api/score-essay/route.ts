@@ -36,14 +36,24 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 // ============================================================
 
 async function scoreEssayWithGroq(essay: string, prompt: string | undefined, examType: string) {
-  const systemPrompt = `You are an expert evaluator for Philippine college entrance examinations (${examType}).
+  const systemPrompt = `You are a strict, demanding evaluator for Philippine college entrance examinations (${examType}). You are grading against a competitive, high-stakes admissions bar, not a classroom participation bar — treat this like a real examiner deciding who gets a limited number of slots.
+
 Score the student's essay on these 5 dimensions, each out of 20 points (total 100):
 
-1. Content (20pts): Relevance, depth, development of ideas, use of examples
+1. Content (20pts): Relevance, depth, development of ideas, use of specific/concrete examples
 2. Organization (20pts): Introduction, body paragraphs, conclusion, logical structure
-3. Grammar (20pts): Sentence construction, grammar accuracy, punctuation, vocabulary
+3. Grammar (20pts): Sentence construction, grammar accuracy, punctuation, vocabulary precision
 4. Coherence (20pts): Flow of ideas, transitions, unity, paragraph coherence
-5. Argument (20pts): Clarity of thesis, strength of reasoning, persuasiveness
+5. Argument (20pts): Clarity of thesis, strength of reasoning, persuasiveness, depth of insight
+
+GRADING DISCIPLINE — apply these anchors strictly and do not inflate scores out of encouragement:
+- 18-20 per dimension: Reserved for genuinely exceptional, near-flawless work — the kind that would stand out in a competitive applicant pool. This should be rare.
+- 14-17: Solid, clearly above-average work with only minor issues. Most competent essays top out here, not higher.
+- 10-13: Average/adequate — gets the job done but is generic, underdeveloped, or has noticeable issues. Many typical student essays belong here.
+- 6-9: Below average — significant weaknesses in this dimension that would concern an admissions reader.
+- 1-5: Poor — the dimension is largely absent, incoherent, or fundamentally flawed.
+
+Be specific and critical in your feedback. Do not soften weaknesses to spare feelings — this tool exists to prepare students for a real, competitive exam, and vague praise does not help them improve. Actively penalize: generic/cliché reasoning, unsupported claims, thin or vague examples, repetitive sentence structure, transitions that are just stock connector words without real logical linkage, and any argument that doesn't directly and specifically address the prompt. A technically correct but generic essay should NOT score in the "Excellent" range — reserve top scores for essays that combine correctness with genuine insight, specificity, and original thought.
 
 Respond with ONLY valid JSON (no markdown, no explanation outside JSON):
 {
@@ -54,7 +64,7 @@ Respond with ONLY valid JSON (no markdown, no explanation outside JSON):
     {"dimension":"Coherence","score":<1-20>,"feedback":"<specific>","strengths":["..."],"weaknesses":["..."]},
     {"dimension":"Argument","score":<1-20>,"feedback":"<specific>","strengths":["..."],"weaknesses":["..."]}
   ],
-  "overallFeedback": "<2-3 sentence overall assessment>",
+  "overallFeedback": "<2-3 sentence overall assessment, direct and honest about where this essay would actually land in a competitive applicant pool>",
   "strengths": ["<overall strength 1>", "<overall strength 2>"],
   "weaknesses": ["<overall weakness 1>", "<overall weakness 2>"],
   "suggestions": ["<actionable 1>", "<actionable 2>", "<actionable 3>"],
@@ -75,7 +85,7 @@ Respond with ONLY valid JSON (no markdown, no explanation outside JSON):
     }
   ]
 }
-For grammarIssues, find up to 8 real issues. The "excerpt" MUST be copied character-for-character from the essay so it can be located and highlighted — do not paraphrase it.`
+For grammarIssues, find up to 8 real issues — look closely, including subtler style/precision issues, not just outright errors. The "excerpt" MUST be copied character-for-character from the essay so it can be located and highlighted — do not paraphrase it.`
 
   const userMessage = prompt ? `Essay Prompt: ${prompt}\n\nStudent Essay:\n${essay}` : `Student Essay:\n${essay}`
 
@@ -85,7 +95,7 @@ For grammarIssues, find up to 8 real issues. The "excerpt" MUST be copied charac
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userMessage },
     ],
-    temperature: 0.3,
+    temperature: 0.2,
     max_tokens: 2000,
     response_format: { type: 'json_object' },
   })
@@ -104,7 +114,7 @@ For grammarIssues, find up to 8 real issues. The "excerpt" MUST be copied charac
 
   const rubricScores = (parsed.rubricScores || []).map((r: any) => ({
     dimension: r.dimension,
-    score: Math.max(1, Math.min(20, parseInt(r.score) || 10)),
+    score: Math.max(1, Math.min(20, parseInt(r.score) || 8)),
     maxScore: 20,
     feedback: r.feedback || '',
     strengths: Array.isArray(r.strengths) ? r.strengths : [],
