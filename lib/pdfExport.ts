@@ -131,14 +131,44 @@ export function exportScoreToPDF(score: EssayScore) {
   // ── Grammar issues ──────────────────────────────────────
   if (score.grammarIssues && score.grammarIssues.length > 0) {
     heading('Flagged Grammar & Style Issues')
+
     for (const g of score.grammarIssues) {
-      ensureSpace(12)
+      const titleText = `[${g.type}] "${g.excerpt}"`
+      const bodyText = g.replacement
+        ? `${g.issue}${g.issue ? ' — ' : ''}Suggested fix: "${g.replacement}"`
+        : g.suggestion
+          ? `${g.issue}${g.issue ? ' — ' : ''}${g.suggestion}`
+          : g.issue
+
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(9)
+      const titleLines = doc.splitTextToSize(titleText, CONTENT_WIDTH)
+
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(9)
+      const bodyLines = doc.splitTextToSize(bodyText, CONTENT_WIDTH)
+
+      // Reserve space for the whole item up front so it doesn't get
+      // split awkwardly across a page break mid-way through.
+      ensureSpace(titleLines.length * 4.5 + bodyLines.length * 4.5 + 5)
+
       doc.setFont('helvetica', 'bold')
       doc.setFontSize(9)
       doc.setTextColor(180, 100, 20)
-      doc.text(`[${g.type}] "${g.excerpt}"`, MARGIN, y)
-      y += 4.5
-      paragraph(`${g.issue} → ${g.suggestion}`, 9)
+      for (const line of titleLines) {
+        doc.text(line, MARGIN, y)
+        y += 4.5
+      }
+
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(9)
+      doc.setTextColor(50, 50, 60)
+      for (const line of bodyLines) {
+        doc.text(line, MARGIN, y)
+        y += 4.5
+      }
+
+      y += 3.5 // breathing room between issues
     }
   }
 
