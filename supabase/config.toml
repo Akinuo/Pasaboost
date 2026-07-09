@@ -1,6 +1,6 @@
-> Supabase CLI config for local development (optional).
-> Run `supabase init` normally instead if you want the full generated config —
-> this trimmed version covers what PasaBoost needs.
+# Supabase CLI config for local development (optional).
+# Run `supabase init` normally instead if you want the full generated config --
+# this trimmed version covers what PasaBoost needs.
 
 project_id = "pasaboost"
 
