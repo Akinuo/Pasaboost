@@ -49,7 +49,7 @@ function rowToScore(row: Database['public']['Tables']['scores']['Row']): EssaySc
     strengths: (row.strengths as string[]) ?? [],
     weaknesses: (row.weaknesses as string[]) ?? [],
     suggestions: (row.suggestions as string[]) ?? [],
-    paragraphRewrites: (row.paragraph_rewrites as EssayScore['paragraphRewrites']) ?? [],
+    paragraphRewrites: (row.paragraph_rewrites as unknown as EssayScore['paragraphRewrites']) ?? [],
     estimatedBand: (row.estimated_band as EssayScore['estimatedBand']) ?? 'Developing (60-74)',
     readabilityScore: row.readability_score ?? undefined,
     vocabularyDiversity: row.vocabulary_diversity ?? undefined,

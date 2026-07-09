@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -34,7 +33,6 @@ export default function RegisterPage() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const [signupComplete, setSignupComplete] = useState(false)
   const { signUp, signInWithGoogle, error, clearError } = useAuth()
-  const router = useRouter()
 
   const { register, handleSubmit, formState: { errors } } = useForm<RegisterFormValues>({ resolver: zodResolver(registerSchema) })
 
