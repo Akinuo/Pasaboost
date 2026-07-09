@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Save, Send, Trash2, ChevronDown, Clock, FileText, Lightbulb,
   AlertCircle, CheckCircle, Loader2, RotateCcw, ShieldCheck,
-  Sparkles, X, ScanSearch,
+  Sparkles, X, ScanSearch, SpellCheck2,
 } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { createClient } from '@/lib/supabase/client'
@@ -14,8 +14,10 @@ import { saveDraft, updateDraft, getUserDrafts, deleteDraft, getDraft } from '@/
 import { scoreEssayViaAPI, generateMockScore } from '@/lib/scoreApi'
 import { checkIntegrityViaAPI } from '@/lib/integrityApi'
 import { generateOutlineViaAPI } from '@/lib/outlineApi'
+import { checkGrammarViaAPI } from '@/lib/grammarApi'
+import GrammarHighlightedTextarea from '@/components/editor/GrammarHighlightedTextarea'
 import { countWords, debounce, EXAM_DESCRIPTIONS } from '@/lib/utils'
-import type { ExamType, EssayDraft, AIDetectionResult, OriginalityResult, EssayOutline } from '@/types'
+import type { ExamType, EssayDraft, AIDetectionResult, OriginalityResult, EssayOutline, GrammarIssue } from '@/types'
 
 const EXAM_TYPES: ExamType[] = ['UPCAT', 'ACET', 'DCAT', 'USTET', 'General']
 const MIN_WORDS = 50
@@ -31,14 +33,17 @@ function EssayEditorInner() {
 
   const [title, setTitle] = useState('Untitled Essay')
   const [content, setContent] = useState('')
-  const [examType, setExamType] = useState<ExamType>('General')
-  const [prompt, setPrompt] = useState('')
+  const [examType, setExamType] = useState<ExamType>(() => {
+    const urlExam = searchParams.get('examType') as ExamType
+    return urlExam && EXAM_TYPES.includes(urlExam) ? urlExam : 'General'
+  })
+  const [prompt, setPrompt] = useState(() => searchParams.get('prompt') || '')
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(searchParams.get('draftId'))
 
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
-  const [showPromptPanel, setShowPromptPanel] = useState(false)
+  const [showPromptPanel, setShowPromptPanel] = useState(() => !!searchParams.get('prompt'))
   const [drafts, setDrafts] = useState<EssayDraft[]>([])
   const [showDrafts, setShowDrafts] = useState(false)
 
@@ -53,16 +58,14 @@ function EssayEditorInner() {
   const [aiDetection, setAiDetection] = useState<AIDetectionResult | null>(null)
   const [originality, setOriginality] = useState<OriginalityResult | null>(null)
 
+  const [grammarIssues, setGrammarIssues] = useState<GrammarIssue[]>([])
+  const [grammarLoading, setGrammarLoading] = useState(false)
+  const [grammarError, setGrammarError] = useState<string | null>(null)
+  const [grammarChecked, setGrammarChecked] = useState(false)
+
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const wordCount = countWords(content)
   const charCount = content.length
-
-  useEffect(() => {
-    const urlPrompt = searchParams.get('prompt')
-    const urlExam = searchParams.get('examType') as ExamType
-    if (urlPrompt) { setPrompt(urlPrompt); setShowPromptPanel(true) }
-    if (urlExam && EXAM_TYPES.includes(urlExam)) setExamType(urlExam)
-  }, [searchParams])
 
   useEffect(() => {
     if (!currentDraftId) return
@@ -83,13 +86,15 @@ function EssayEditorInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const autoSave = useCallback(
-    debounce(async (t: string, c: string, e: ExamType, p: string, id: string | null) => {
-      if (!user || !c.trim()) return
+  // Created once via lazy useState init — takes `user` as an explicit argument
+  // (passed fresh from the caller each time) instead of capturing it in a ref,
+  // since reading ref.current during render is disallowed.
+  const [autoSave] = useState(() =>
+    debounce(async (t: string, c: string, e: ExamType, p: string, id: string | null, currentUser: typeof user) => {
+      if (!currentUser || !c.trim()) return
       setSaveStatus('saving')
       try {
-        const draftData = { userId: user.id, title: t, content: c, examType: e, prompt: p, wordCount: countWords(c), isSubmitted: false }
+        const draftData = { userId: currentUser.id, title: t, content: c, examType: e, prompt: p, wordCount: countWords(c), isSubmitted: false }
         if (id) {
           await updateDraft(supabase, id, draftData)
           setSaveStatus('saved')
@@ -102,15 +107,14 @@ function EssayEditorInner() {
       } catch {
         setSaveStatus('error')
       }
-    }, AUTOSAVE_DELAY),
-    [user]
+    }, AUTOSAVE_DELAY)
   )
 
   useEffect(() => {
     if (content.trim().length > 10) {
-      autoSave(title, content, examType, prompt, currentDraftId)
+      autoSave(title, content, examType, prompt, currentDraftId, user)
     }
-  }, [title, content, examType, prompt, currentDraftId, autoSave])
+  }, [title, content, examType, prompt, currentDraftId, user, autoSave])
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -182,6 +186,51 @@ function EssayEditorInner() {
     } finally {
       setIntegrityLoading(false)
     }
+  }
+
+  const handleCheckGrammar = async () => {
+    if (wordCount < MIN_WORDS) {
+      setGrammarError(`Write at least ${MIN_WORDS} words before running this check.`)
+      return
+    }
+    setGrammarLoading(true)
+    setGrammarError(null)
+    try {
+      const res = await checkGrammarViaAPI(content)
+      if (res.success) {
+        setGrammarIssues(res.issues ?? [])
+        setGrammarChecked(true)
+      } else {
+        setGrammarError(res.error || 'Failed to check grammar.')
+      }
+    } catch (err) {
+      setGrammarError(err instanceof Error ? err.message : 'Failed to check grammar.')
+    } finally {
+      setGrammarLoading(false)
+    }
+  }
+
+  const handleApplyGrammarFix = (issue: GrammarIssue) => {
+    if (!issue.replacement) return
+    setContent((prev) => prev.includes(issue.excerpt) ? prev.replace(issue.excerpt, issue.replacement!) : prev)
+    setGrammarIssues((prev) => prev.filter((i) => i !== issue))
+  }
+
+  const handleDismissGrammarIssue = (issue: GrammarIssue) => {
+    setGrammarIssues((prev) => prev.filter((i) => i !== issue))
+  }
+
+  const handleApplyAllGrammarFixes = () => {
+    setContent((prev) => {
+      let next = prev
+      for (const issue of grammarIssues) {
+        if (issue.replacement && next.includes(issue.excerpt)) {
+          next = next.replace(issue.excerpt, issue.replacement)
+        }
+      }
+      return next
+    })
+    setGrammarIssues((prev) => prev.filter((i) => !i.replacement))
   }
 
   const handleSubmit = async () => {
@@ -264,6 +313,9 @@ function EssayEditorInner() {
     setPrompt(draft.prompt || '')
     setCurrentDraftId(draft.id)
     setShowDrafts(false)
+    setGrammarIssues([])
+    setGrammarChecked(false)
+    setGrammarError(null)
   }
 
   const handleClearEditor = () => {
@@ -273,6 +325,9 @@ function EssayEditorInner() {
     setPrompt('')
     setExamType('General')
     setCurrentDraftId(null)
+    setGrammarIssues([])
+    setGrammarChecked(false)
+    setGrammarError(null)
   }
 
   return (
@@ -342,6 +397,14 @@ function EssayEditorInner() {
             Check AI / Originality
           </button>
 
+          <button onClick={handleCheckGrammar} disabled={wordCount < MIN_WORDS || grammarLoading} className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border border-input bg-background hover:bg-accent transition-colors disabled:opacity-40" title="Check grammar and style, then click highlighted text to fix">
+            {grammarLoading ? <Loader2 size={14} className="animate-spin" /> : <SpellCheck2 size={14} />}
+            Check Grammar
+            {grammarIssues.length > 0 && (
+              <span className="ml-0.5 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-amber-500 text-white">{grammarIssues.length}</span>
+            )}
+          </button>
+
           {currentDraftId && (
             <button onClick={handleDeleteDraft} className="p-2 text-sm rounded-lg border border-input bg-background hover:bg-destructive/10 hover:text-destructive transition-colors">
               <Trash2 size={14} />
@@ -386,14 +449,36 @@ function EssayEditorInner() {
 
       <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Essay title…" className="w-full mb-3 px-0 py-2 text-2xl font-display font-bold bg-transparent border-none text-foreground placeholder:text-muted-foreground/40 focus:outline-none" />
 
-      <textarea
-        ref={textareaRef}
+      <GrammarHighlightedTextarea
+        textareaRef={textareaRef}
         value={content}
-        onChange={(e) => setContent(e.target.value)}
+        onChange={setContent}
+        issues={grammarIssues}
+        onApplyFix={handleApplyGrammarFix}
+        onDismissIssue={handleDismissGrammarIssue}
         placeholder={`Start writing your essay here…\n\nTip: A strong ${examType} essay typically has an introduction, 2-3 body paragraphs, and a conclusion. Aim for at least 250 words for a good score.`}
-        className="essay-editor min-h-[450px]"
-        style={{ overflow: 'hidden' }}
       />
+
+      {grammarError && (
+        <p className="mt-2 text-xs text-destructive flex items-center gap-1.5"><AlertCircle size={12} />{grammarError}</p>
+      )}
+      {grammarChecked && !grammarLoading && (
+        <div className="mt-2 flex items-center justify-between text-xs">
+          {grammarIssues.length > 0 ? (
+            <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+              <SpellCheck2 size={12} />
+              {grammarIssues.length} issue{grammarIssues.length !== 1 ? 's' : ''} flagged — click the highlighted text to fix
+            </span>
+          ) : (
+            <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400"><CheckCircle size={12} />No issues found</span>
+          )}
+          {grammarIssues.some((i) => i.replacement) && (
+            <button onClick={handleApplyAllGrammarFixes} className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline">
+              Apply all fixes
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="flex items-center justify-between mt-3 px-1">
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
@@ -442,7 +527,7 @@ function EssayEditorInner() {
                 {!outlineLoading && !outlineError && outline && (
                   <div className="space-y-4">
                     <p className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-3">
-                      This is structure only — write every sentence yourself. Copy-pasting AI text will likely get flagged by the AI checker and won't reflect your real writing skill.
+                      This is structure only — write every sentence yourself. Copy-pasting AI text will likely get flagged by the AI checker and won&apos;t reflect your real writing skill.
                     </p>
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">Possible Thesis Angle</p>

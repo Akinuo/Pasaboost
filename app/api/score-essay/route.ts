@@ -81,11 +81,12 @@ Respond with ONLY valid JSON (no markdown, no explanation outside JSON):
       "type": "<one of: grammar, spelling, punctuation, style>",
       "excerpt": "<verbatim short snippet (3-10 words) copied EXACTLY from the essay containing the issue>",
       "issue": "<short description of what's wrong>",
-      "suggestion": "<how to fix it>"
+      "suggestion": "<how to fix it>",
+      "replacement": "<the EXACT corrected text that should replace the excerpt — a drop-in substitute, not an explanation>"
     }
   ]
 }
-For grammarIssues, find up to 8 real issues — look closely, including subtler style/precision issues, not just outright errors. The "excerpt" MUST be copied character-for-character from the essay so it can be located and highlighted — do not paraphrase it.`
+For grammarIssues, find up to 8 real issues — look closely, including subtler style/precision issues, not just outright errors. The "excerpt" MUST be copied character-for-character from the essay so it can be located and highlighted — do not paraphrase it. The "replacement" MUST be literal corrected text such that essay.replace(excerpt, replacement) produces correct text.`
 
   const userMessage = prompt ? `Essay Prompt: ${prompt}\n\nStudent Essay:\n${essay}` : `Student Essay:\n${essay}`
 
@@ -146,6 +147,7 @@ For grammarIssues, find up to 8 real issues — look closely, including subtler 
             excerpt: g.excerpt,
             issue: g.issue || '',
             suggestion: g.suggestion || '',
+            replacement: typeof g.replacement === 'string' && g.replacement.length > 0 ? g.replacement : undefined,
           }))
       : [],
     estimatedBand: band,

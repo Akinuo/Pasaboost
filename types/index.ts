@@ -163,7 +163,14 @@ export interface GrammarIssue {
   type: GrammarIssueType
   excerpt: string // verbatim snippet from the essay this issue refers to (used to locate + highlight it)
   issue: string // short description of what's wrong
-  suggestion: string // how to fix it
+  suggestion: string // how to fix it (human-readable explanation)
+  replacement?: string // verbatim corrected text to substitute for `excerpt` — enables one-click "Apply Fix"
+}
+
+export interface GrammarCheckResponse {
+  success: boolean
+  issues?: GrammarIssue[]
+  error?: string
 }
 
 // ============================================================
