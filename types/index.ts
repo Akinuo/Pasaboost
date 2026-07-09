@@ -101,6 +101,8 @@ export interface EssayScore {
   grammarIssues?: GrammarIssue[]
   aiDetection?: AIDetectionResult
   originality?: OriginalityResult
+  aiPenaltyApplied?: number // points deducted from totalScore because aiDetection.likelihood >= 60
+  preAIPenaltyScore?: number // the totalScore before the AI-likelihood deduction was applied
 }
 
 export interface ScoreDataPoint {

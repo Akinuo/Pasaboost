@@ -68,6 +68,11 @@ export default function ScoreResultPage({ params }: { params: Promise<{ scoreId:
               </div>
               <div className="text-white/60 text-sm">out of 100</div>
               <div className="mt-1 text-sm font-medium text-white/80">{score.estimatedBand}</div>
+              {!!score.aiPenaltyApplied && (
+                <div className="mt-1.5 text-xs text-red-300">
+                  {score.preAIPenaltyScore} − {score.aiPenaltyApplied} (AI-detection penalty)
+                </div>
+              )}
             </div>
           </div>
 
@@ -312,6 +317,13 @@ export default function ScoreResultPage({ params }: { params: Promise<{ scoreId:
                 </div>
                 <p className="text-sm font-semibold text-foreground mb-1">{score.aiDetection.verdict}</p>
                 <p className="text-sm text-muted-foreground mb-3">{score.aiDetection.explanation}</p>
+                {!!score.aiPenaltyApplied && (
+                  <div className="mb-3 px-3 py-2 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800">
+                    <p className="text-xs font-semibold text-red-700 dark:text-red-400">
+                      {score.aiPenaltyApplied} points were deducted from your total score because the AI-detection likelihood was {score.aiDetection.likelihood}% (≥60%).
+                    </p>
+                  </div>
+                )}
                 {score.aiDetection.indicators.length > 0 && (
                   <ul className="space-y-1.5">
                     {score.aiDetection.indicators.map((ind, i) => (

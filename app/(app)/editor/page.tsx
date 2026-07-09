@@ -16,7 +16,7 @@ import { checkIntegrityViaAPI } from '@/lib/integrityApi'
 import { generateOutlineViaAPI } from '@/lib/outlineApi'
 import { checkGrammarViaAPI } from '@/lib/grammarApi'
 import GrammarHighlightedTextarea from '@/components/editor/GrammarHighlightedTextarea'
-import { countWords, debounce, EXAM_DESCRIPTIONS } from '@/lib/utils'
+import { countWords, debounce, EXAM_DESCRIPTIONS, getAIPenalty, getScoreBand } from '@/lib/utils'
 import type { ExamType, EssayDraft, AIDetectionResult, OriginalityResult, EssayOutline, GrammarIssue } from '@/types'
 
 const EXAM_TYPES: ExamType[] = ['UPCAT', 'ACET', 'DCAT', 'USTET', 'General']
@@ -247,6 +247,21 @@ function EssayEditorInner() {
       const scoreData = res.success && res.score ? res.score : generateMockScore(content, prompt, examType)
       const integrity = integrityRes.success ? integrityRes : null
 
+      // Deduct points if the AI-generated-text checker flagged this essay at
+      // 60%+ likelihood. Tiered penalty — see getAIPenalty() for the bands.
+      const aiLikelihood = integrity?.aiDetection?.likelihood
+      const aiPenaltyApplied = getAIPenalty(aiLikelihood)
+      const preAIPenaltyScore = scoreData.totalScore
+      const finalTotalScore = Math.max(0, preAIPenaltyScore - aiPenaltyApplied)
+      if (aiPenaltyApplied > 0) {
+        scoreData.totalScore = finalTotalScore
+        scoreData.estimatedBand = getScoreBand(finalTotalScore)
+        scoreData.weaknesses = [
+          ...scoreData.weaknesses,
+          `AI-detection checker flagged this essay at ${aiLikelihood}% likelihood — ${aiPenaltyApplied} points were deducted from your score.`,
+        ]
+      }
+
       // Save draft as submitted
       let draftDocId = currentDraftId
       if (!draftDocId) {
@@ -285,6 +300,8 @@ function EssayEditorInner() {
           originality_note: integrity?.originality?.note,
           originality_matched_essay_id: integrity?.originality?.matchedEssayId,
           originality_similarity_percent: integrity?.originality?.similarityPercent,
+          pre_ai_penalty_score: aiPenaltyApplied > 0 ? preAIPenaltyScore : null,
+          ai_penalty_applied: aiPenaltyApplied,
         } as any)
         .select('id')
         .single()
@@ -602,6 +619,13 @@ function EssayEditorInner() {
                     </div>
                     <p className="text-xs font-medium text-foreground mb-2">{aiDetection.verdict}</p>
                     <p className="text-sm text-muted-foreground mb-3">{aiDetection.explanation}</p>
+                    {aiDetection.likelihood >= 60 && (
+                      <div className="mb-3 px-3 py-2 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800">
+                        <p className="text-xs font-semibold text-red-700 dark:text-red-400">
+                          −{getAIPenalty(aiDetection.likelihood)} points will be deducted from your score at this likelihood if you submit as-is.
+                        </p>
+                      </div>
+                    )}
                     {aiDetection.indicators.length > 0 && (
                       <ul className="space-y-1.5">
                         {aiDetection.indicators.map((ind, i) => (

@@ -69,6 +69,8 @@ function rowToScore(row: Database['public']['Tables']['scores']['Row']): EssaySc
       matchedEssayId: (row as any).originality_matched_essay_id ?? undefined,
       similarityPercent: (row as any).originality_similarity_percent ?? undefined,
     } : undefined,
+    aiPenaltyApplied: (row as any).ai_penalty_applied ?? undefined,
+    preAIPenaltyScore: (row as any).pre_ai_penalty_score ?? undefined,
   }
 }
 

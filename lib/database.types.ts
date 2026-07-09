@@ -207,6 +207,8 @@ export type Database = {
           originality_similarity_percent: number | null
           overall_feedback: string | null
           paragraph_rewrites: Json | null
+          pre_ai_penalty_score: number | null
+          ai_penalty_applied: number
           prompt: string | null
           readability_score: number | null
           rubric_scores: Json
@@ -237,6 +239,8 @@ export type Database = {
           originality_similarity_percent?: number | null
           overall_feedback?: string | null
           paragraph_rewrites?: Json | null
+          pre_ai_penalty_score?: number | null
+          ai_penalty_applied?: number
           prompt?: string | null
           readability_score?: number | null
           rubric_scores: Json
@@ -267,6 +271,8 @@ export type Database = {
           originality_similarity_percent?: number | null
           overall_feedback?: string | null
           paragraph_rewrites?: Json | null
+          pre_ai_penalty_score?: number | null
+          ai_penalty_applied?: number
           prompt?: string | null
           readability_score?: number | null
           rubric_scores?: Json

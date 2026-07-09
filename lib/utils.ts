@@ -40,6 +40,23 @@ export function getScoreLabel(score: number): string {
   return 'Needs Improvement'
 }
 
+// ============================================================
+// AI-detection score penalty
+// If the AI-generated-text checker estimates a likelihood of
+// 60% or higher, the essay's total score takes a deduction —
+// tiered so more clearly AI-flagged essays lose more points.
+// Returns 0 when likelihood is below the 60 threshold.
+// ============================================================
+
+export function getAIPenalty(likelihood: number | null | undefined): number {
+  if (likelihood == null) return 0
+  if (likelihood >= 90) return 40
+  if (likelihood >= 80) return 30
+  if (likelihood >= 70) return 20
+  if (likelihood >= 60) return 10
+  return 0
+}
+
 export function getDimensionColor(dimension: ScoreDimension): string {
   const colors: Record<ScoreDimension, string> = {
     Content: '#1E40AF',
