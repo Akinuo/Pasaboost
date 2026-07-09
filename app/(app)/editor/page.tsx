@@ -377,7 +377,7 @@ function EssayEditorInner() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end w-full sm:w-auto">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground px-2">
             {saveStatus === 'saving' && <Loader2 size={12} className="animate-spin" />}
             {saveStatus === 'saved' && <CheckCircle size={12} className="text-green-500" />}
@@ -389,17 +389,19 @@ function EssayEditorInner() {
 
           <button onClick={handleManualSave} disabled={!content.trim()} className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border border-input bg-background hover:bg-accent transition-colors disabled:opacity-40">
             <Save size={14} />
-            Save
+            <span className="hidden sm:inline">Save</span>
           </button>
 
           <button onClick={handleCheckIntegrity} disabled={wordCount < MIN_WORDS} className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border border-input bg-background hover:bg-accent transition-colors disabled:opacity-40" title="Check for AI-generated text and compare against your past essays">
             <ScanSearch size={14} />
-            Check AI / Originality
+            <span className="hidden sm:inline">Check AI / Originality</span>
+            <span className="sm:hidden">AI Check</span>
           </button>
 
           <button onClick={handleCheckGrammar} disabled={wordCount < MIN_WORDS || grammarLoading} className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border border-input bg-background hover:bg-accent transition-colors disabled:opacity-40" title="Check grammar and style, then click highlighted text to fix">
             {grammarLoading ? <Loader2 size={14} className="animate-spin" /> : <SpellCheck2 size={14} />}
-            Check Grammar
+            <span className="hidden sm:inline">Check Grammar</span>
+            <span className="sm:hidden">Grammar</span>
             {grammarIssues.length > 0 && (
               <span className="ml-0.5 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-amber-500 text-white">{grammarIssues.length}</span>
             )}

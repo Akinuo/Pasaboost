@@ -47,7 +47,7 @@ export default function GrammarHighlightedTextarea({
   const internalRef = useRef<HTMLTextAreaElement>(null)
   const taRef = textareaRef ?? internalRef
 
-  const [popover, setPopover] = useState<{ issue: GrammarIssue; top: number; left: number } | null>(null)
+  const [popover, setPopover] = useState<{ issue: GrammarIssue; top: number; left: number; width: number } | null>(null)
 
   // Build non-overlapping highlight ranges from the current text + active issues.
   // Recomputed on every keystroke, so if the user edits away a flagged excerpt,
@@ -87,10 +87,12 @@ export default function GrammarHighlightedTextarea({
     const wrapperRect = wrapperRef.current?.getBoundingClientRect()
     const markRect = (e.target as HTMLElement).getBoundingClientRect()
     if (!wrapperRect) return
+    const popoverWidth = Math.min(288, wrapperRect.width - 16) // never wider than the wrapper minus a small margin
     setPopover({
       issue,
       top: markRect.bottom - wrapperRect.top + 6,
-      left: Math.min(markRect.left - wrapperRect.left, wrapperRect.width - 280),
+      left: Math.min(Math.max(markRect.left - wrapperRect.left, 0), wrapperRect.width - popoverWidth),
+      width: popoverWidth,
     })
   }
 
@@ -135,8 +137,8 @@ export default function GrammarHighlightedTextarea({
 
       {popover && (
         <div
-          className="absolute z-30 w-72 bg-card border border-border rounded-xl shadow-xl p-3.5"
-          style={{ top: popover.top, left: Math.max(popover.left, 0) }}
+          className="absolute z-30 bg-card border border-border rounded-xl shadow-xl p-3.5"
+          style={{ top: popover.top, left: Math.max(popover.left, 0), width: popover.width }}
         >
           <div className="flex items-center gap-1.5 mb-1.5">
             <AlertCircle size={13} className="text-amber-500 flex-shrink-0" />

@@ -39,6 +39,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      daily_prompts: {
+        Row: {
+          category: string
+          created_at: string
+          difficulty: string
+          exam_type: string[]
+          generated_date: string
+          id: string
+          keywords: string[]
+          text: string
+          tip: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          difficulty: string
+          exam_type?: string[]
+          generated_date?: string
+          id?: string
+          keywords?: string[]
+          text: string
+          tip?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          difficulty?: string
+          exam_type?: string[]
+          generated_date?: string
+          id?: string
+          keywords?: string[]
+          text?: string
+          tip?: string | null
+        }
+        Relationships: []
+      }
       drafts: {
         Row: {
           content: string

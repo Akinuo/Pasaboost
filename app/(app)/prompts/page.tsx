@@ -1,12 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Lightbulb, BookOpen, Search, ArrowRight, Shuffle, Star, PenLine } from 'lucide-react'
+import { Lightbulb, BookOpen, Search, ArrowRight, Shuffle, Star, PenLine, Sparkles } from 'lucide-react'
 import { WRITING_PROMPTS, getDailyPrompt, PROMPT_CATEGORIES, getRandomPrompt } from '@/lib/prompts'
 import { EXAM_COLORS } from '@/lib/utils'
-import type { PromptCategory, ExamType } from '@/types'
+import { createClient } from '@/lib/supabase/client'
+import { getDailyGeneratedPrompts } from '@/lib/queries'
+import type { PromptCategory, ExamType, WritingPrompt } from '@/types'
 
 const DIFFICULTY_COLORS = {
   Beginner: 'bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400',
@@ -19,10 +21,28 @@ export default function PromptsPage() {
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<PromptCategory | 'All'>('All')
   const [selectedExam, setSelectedExam] = useState<ExamType | 'All'>('All')
+  const [aiPrompts, setAiPrompts] = useState<WritingPrompt[]>([])
+  const [aiLoading, setAiLoading] = useState(true)
 
-  const dailyPrompt = getDailyPrompt()
+  useEffect(() => {
+    let cancelled = false
+    const supabase = createClient()
+    getDailyGeneratedPrompts(supabase, 20).then((prompts) => {
+      if (!cancelled) {
+        setAiPrompts(prompts)
+        setAiLoading(false)
+      }
+    })
+    return () => { cancelled = true }
+  }, [])
 
-  const filtered = WRITING_PROMPTS.filter((p) => {
+  // Prefer a freshly AI-generated topic for the hero card; fall back to
+  // the deterministic pick from the static library if none exist yet
+  // (e.g. right after a fresh deploy, before the first cron run).
+  const dailyPrompt = aiPrompts[0] ?? getDailyPrompt()
+  const allPrompts = [...aiPrompts, ...WRITING_PROMPTS]
+
+  const filtered = allPrompts.filter((p) => {
     const matchesSearch = !search || p.text.toLowerCase().includes(search.toLowerCase()) || p.keywords.some((k) => k.toLowerCase().includes(search.toLowerCase()))
     const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory
     const matchesExam = selectedExam === 'All' || p.examType.includes(selectedExam as ExamType)
@@ -44,13 +64,24 @@ export default function PromptsPage() {
     <div>
       <div className="page-header">
         <h1 className="page-title">Writing Prompts</h1>
-        <p className="page-subtitle">Practice with {WRITING_PROMPTS.length} prompts tailored for Philippine college entrance exams</p>
+        <p className="page-subtitle">
+          Practice with {WRITING_PROMPTS.length} curated prompts
+          {aiLoading && <span className="text-muted-foreground/60"> · loading today&apos;s AI topics…</span>}
+          {!aiLoading && aiPrompts.length > 0 && <> + {aiPrompts.length} fresh AI-generated topics today</>}
+          , tailored for Philippine college entrance exams
+        </p>
       </div>
 
       <motion.div className="mb-8 rounded-2xl overflow-hidden border border-amber-200 dark:border-amber-800/50 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
         <div className="px-6 py-4 border-b border-amber-200 dark:border-amber-800/50 flex items-center gap-2">
           <Star size={15} className="text-amber-500 fill-amber-500" />
           <span className="text-sm font-semibold text-amber-800 dark:text-amber-300">Today&apos;s Daily Prompt</span>
+          {aiPrompts.length > 0 && (
+            <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300">
+              <Sparkles size={10} />
+              AI Generated
+            </span>
+          )}
           <span className="ml-auto text-xs text-amber-600 dark:text-amber-400">{new Date().toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
         </div>
         <div className="px-6 py-5">
@@ -110,9 +141,15 @@ export default function PromptsPage() {
       <div className="grid md:grid-cols-2 gap-4">
         {filtered.map((prompt, i) => (
           <motion.div key={prompt.id} className="bg-card border border-border rounded-xl p-5 hover:shadow-md transition-shadow flex flex-col" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.04, 0.4) }}>
-            <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-2 mb-3 flex-wrap">
               <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400">{prompt.category}</span>
               <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${DIFFICULTY_COLORS[prompt.difficulty]}`}>{prompt.difficulty}</span>
+              {prompt.isDaily && (
+                <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300">
+                  <Sparkles size={9} />
+                  AI Generated
+                </span>
+              )}
             </div>
             <p className="text-sm text-foreground leading-relaxed flex-1 mb-4">{prompt.text}</p>
             <div className="flex flex-wrap gap-1 mb-4">

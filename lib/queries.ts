@@ -9,7 +9,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/database.types'
 import type {
   EssayDraft, EssayScore, UserStats, UserProfile,
-  LeaderboardEntry, ScoreDataPoint, ExamType, RubricScore,
+  LeaderboardEntry, ScoreDataPoint, ExamType, RubricScore, WritingPrompt,
 } from '@/types'
 
 type TypedClient = SupabaseClient<Database>
@@ -329,4 +329,43 @@ export async function upsertLeaderboardEntry(
 export async function removeLeaderboardEntry(supabase: TypedClient, userId: string): Promise<void> {
   const { error } = await supabase.from('leaderboard').delete().eq('user_id', userId)
   if (error) throw error
+}
+
+// ============================================================
+// Daily AI-generated prompts
+// Reads whatever the most recent generated batch is — normally
+// today's, but falls back to the latest available batch if the
+// daily job hasn't run yet (e.g. right after midnight) so the
+// prompts page is never empty.
+// ============================================================
+export async function getDailyGeneratedPrompts(supabase: TypedClient, limit = 20): Promise<WritingPrompt[]> {
+  const { data: latest } = await supabase
+    .from('daily_prompts')
+    .select('generated_date')
+    .order('generated_date', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (!latest) return []
+
+  const { data, error } = await supabase
+    .from('daily_prompts')
+    .select('*')
+    .eq('generated_date', latest.generated_date)
+    .order('created_at', { ascending: true })
+    .limit(limit)
+
+  if (error || !data) return []
+
+  return data.map((row) => ({
+    id: row.id,
+    text: row.text,
+    category: row.category as WritingPrompt['category'],
+    examType: row.exam_type as ExamType[],
+    difficulty: row.difficulty as WritingPrompt['difficulty'],
+    keywords: row.keywords,
+    tip: row.tip ?? undefined,
+    isDaily: true,
+    date: row.generated_date,
+  }))
 }

@@ -3,21 +3,33 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { PenLine, TrendingUp, Star, ArrowRight, BarChart3, Clock, Target, BookOpen, Lightbulb } from 'lucide-react'
+import { PenLine, TrendingUp, Star, ArrowRight, BarChart3, Clock, Target, BookOpen, Lightbulb, Sparkles } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { createClient } from '@/lib/supabase/client'
-import { getUserScores } from '@/lib/queries'
+import { getUserScores, getDailyGeneratedPrompts } from '@/lib/queries'
 import { getDailyPrompt } from '@/lib/prompts'
 import { getScoreColor, getScoreLabel, formatDateTime, EXAM_COLORS } from '@/lib/utils'
-import type { EssayScore } from '@/types'
+import type { EssayScore, WritingPrompt } from '@/types'
 
 export default function DashboardPage() {
   const { user } = useAuth()
   const [recentScores, setRecentScores] = useState<EssayScore[]>([])
   const [loading, setLoading] = useState(true)
-  const dailyPrompt = getDailyPrompt()
+  const [aiPrompt, setAiPrompt] = useState<WritingPrompt | null>(null)
+
+  // Same "today's prompt" source as the Prompts page — prefer the
+  // freshly AI-generated one, fall back to the static deterministic
+  // pick if the daily batch hasn't been generated yet.
+  const dailyPrompt = aiPrompt ?? getDailyPrompt()
 
   const firstName = (user?.user_metadata?.display_name as string | undefined)?.split(' ')[0] || 'Student'
+
+  useEffect(() => {
+    const supabase = createClient()
+    getDailyGeneratedPrompts(supabase, 1).then((prompts) => {
+      if (prompts[0]) setAiPrompt(prompts[0])
+    })
+  }, [])
 
   useEffect(() => {
     if (!user) return
@@ -72,6 +84,12 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2 mb-1">
               <Lightbulb size={16} className="text-amber-300" />
               <span className="text-xs font-medium text-blue-100 uppercase tracking-wider">Today&apos;s Prompt</span>
+              {aiPrompt && (
+                <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/20 text-white">
+                  <Sparkles size={9} />
+                  AI Generated
+                </span>
+              )}
             </div>
             <p className="font-medium text-white max-w-xl leading-snug">{dailyPrompt.text}</p>
             <div className="flex items-center gap-2 mt-2">
@@ -79,7 +97,7 @@ export default function DashboardPage() {
               <span className="text-xs px-2 py-0.5 bg-white/20 rounded-full">{dailyPrompt.difficulty}</span>
             </div>
           </div>
-          <Link href={`/editor?prompt=${encodeURIComponent(dailyPrompt.text)}&examType=General`} className="flex items-center gap-2 px-5 py-2.5 bg-white text-blue-700 font-semibold rounded-xl hover:bg-blue-50 transition-colors text-sm flex-shrink-0">
+          <Link href={`/editor?prompt=${encodeURIComponent(dailyPrompt.text)}&examType=${dailyPrompt.examType[0] || 'General'}`} className="flex items-center gap-2 px-5 py-2.5 bg-white text-blue-700 font-semibold rounded-xl hover:bg-blue-50 transition-colors text-sm flex-shrink-0">
             <PenLine size={16} />
             Write Essay
           </Link>
