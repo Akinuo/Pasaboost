@@ -116,8 +116,8 @@ export default function GrammarHighlightedTextarea({
   const sharedBoxStyles = 'w-full min-h-[450px] p-4 font-sans text-base leading-relaxed whitespace-pre-wrap break-words'
 
   return (
-    <div ref={wrapperRef} className="relative">
-      {/* Overlay: renders the highlighted text, sits on top, but only <mark> intercepts clicks */}
+    <div ref={wrapperRef} className="relative rounded-lg bg-background">
+      {/* Overlay: renders the highlighted text, sits behind the textarea, but only <mark> intercepts clicks */}
       <div
         aria-hidden="true"
         className={`${sharedBoxStyles} absolute inset-0 pointer-events-none border border-transparent rounded-lg overflow-hidden text-foreground`}
@@ -125,13 +125,13 @@ export default function GrammarHighlightedTextarea({
         {value ? nodes : null}
       </div>
 
-      {/* Real textarea underneath — transparent text, visible caret, fully editable as normal */}
+      {/* Real textarea on top — transparent background/text so the overlay shows through, visible caret, fully editable as normal */}
       <textarea
         ref={taRef}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className={`${sharedBoxStyles} ${className} relative bg-background text-transparent caret-foreground rounded-lg border border-input resize-none focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent placeholder:text-muted-foreground`}
+        className={`${sharedBoxStyles} ${className} relative bg-transparent text-transparent caret-foreground rounded-lg border border-input resize-none focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent placeholder:text-muted-foreground`}
         style={{ overflow: 'hidden' }}
       />
 
