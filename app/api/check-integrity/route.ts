@@ -28,7 +28,12 @@ const CheckSchema = z.object({
   essay: z.string().min(50, 'Essay must be at least 50 characters').max(10000, 'Essay must be under 10,000 characters'),
 })
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
+let _groq: Groq | null = null
+function getGroqClient(): Groq | null {
+  if (!process.env.GROQ_API_KEY) return null
+  if (!_groq) _groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
+  return _groq
+}
 
 // ============================================================
 // 1. AI-detection heuristics (pure JS, no API cost)
@@ -113,7 +118,8 @@ function computeHeuristicScore(essay: string): { score: number; signals: string[
 // ============================================================
 
 async function llmAIJudgment(essay: string): Promise<{ likelihood: number; indicators: string[]; explanation: string } | null> {
-  if (!process.env.GROQ_API_KEY) return null
+  const groq = getGroqClient()
+  if (!groq) return null
 
   try {
     const completion = await groq.chat.completions.create({

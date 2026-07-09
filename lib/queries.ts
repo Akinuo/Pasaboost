@@ -22,15 +22,15 @@ function rowToDraft(row: Database['public']['Tables']['drafts']['Row']): EssayDr
   return {
     id: row.id,
     userId: row.user_id,
-    title: row.title,
+    title: row.title ?? 'Untitled',
     content: row.content,
     prompt: row.prompt ?? undefined,
     promptCategory: (row.prompt_category as EssayDraft['promptCategory']) ?? undefined,
-    examType: row.exam_type,
-    wordCount: row.word_count,
-    createdAt: new Date(row.created_at),
-    updatedAt: new Date(row.updated_at),
-    isSubmitted: row.is_submitted,
+    examType: row.exam_type as ExamType,
+    wordCount: row.word_count ?? 0,
+    createdAt: new Date(row.created_at ?? Date.now()),
+    updatedAt: new Date(row.updated_at ?? row.created_at ?? Date.now()),
+    isSubmitted: row.is_submitted ?? false,
     scoreId: row.score_id ?? undefined,
   }
 }
@@ -42,18 +42,18 @@ function rowToScore(row: Database['public']['Tables']['scores']['Row']): EssaySc
     userId: row.user_id,
     essay: row.essay,
     prompt: row.prompt ?? undefined,
-    examType: row.exam_type,
+    examType: row.exam_type as ExamType,
     totalScore: row.total_score,
     rubricScores: row.rubric_scores as unknown as RubricScore[],
     overallFeedback: row.overall_feedback ?? '',
     strengths: (row.strengths as string[]) ?? [],
     weaknesses: (row.weaknesses as string[]) ?? [],
     suggestions: (row.suggestions as string[]) ?? [],
-    paragraphRewrites: (row.paragraph_rewrites as EssayScore['paragraphRewrites']) ?? [],
+    paragraphRewrites: (row.paragraph_rewrites as unknown as EssayScore['paragraphRewrites']) ?? [],
     estimatedBand: (row.estimated_band as EssayScore['estimatedBand']) ?? 'Developing (60-74)',
     readabilityScore: row.readability_score ?? undefined,
     vocabularyDiversity: row.vocabulary_diversity ?? undefined,
-    createdAt: new Date(row.created_at),
+    createdAt: new Date(row.created_at ?? Date.now()),
     modelVersion: row.model_version ?? undefined,
     grammarIssues: ((row as any).grammar_issues as EssayScore['grammarIssues']) ?? [],
     aiDetection: (row as any).ai_likelihood != null ? {
@@ -75,15 +75,15 @@ function rowToScore(row: Database['public']['Tables']['scores']['Row']): EssaySc
 function rowToStats(row: Database['public']['Tables']['user_stats']['Row']): UserStats {
   return {
     userId: row.user_id,
-    totalEssays: row.total_essays,
-    averageScore: row.average_score,
-    bestScore: row.best_score,
-    currentStreak: row.current_streak,
-    longestStreak: row.longest_streak,
-    lastActivity: new Date(row.last_activity),
-    weeklyGoal: row.weekly_goal,
-    thisWeekCount: row.this_week_count,
-    totalWords: row.total_words,
+    totalEssays: row.total_essays ?? 0,
+    averageScore: row.average_score ?? 0,
+    bestScore: row.best_score ?? 0,
+    currentStreak: row.current_streak ?? 0,
+    longestStreak: row.longest_streak ?? 0,
+    lastActivity: new Date(row.last_activity ?? Date.now()),
+    weeklyGoal: row.weekly_goal ?? 0,
+    thisWeekCount: row.this_week_count ?? 0,
+    totalWords: row.total_words ?? 0,
   }
 }
 
@@ -99,9 +99,9 @@ export async function getProfile(supabase: TypedClient, userId: string): Promise
     displayName: data.display_name,
     photoUrl: data.photo_url,
     email: null, // email lives on auth.users, merged in by the caller if needed
-    leaderboardEnabled: data.leaderboard_enabled,
+    leaderboardEnabled: data.leaderboard_enabled ?? false,
     leaderboardAlias: data.leaderboard_alias,
-    emailNotifications: data.email_notifications,
+    emailNotifications: data.email_notifications ?? true,
   }
 }
 
@@ -302,7 +302,7 @@ export async function getLeaderboard(
     averageScore: row.average_score,
     essayCount: row.essay_count,
     bestScore: row.best_score,
-    improvement: row.improvement,
+    improvement: row.improvement ?? 0,
     examType: row.exam_type as ExamType | undefined,
     badge: row.badge ?? undefined,
   }))

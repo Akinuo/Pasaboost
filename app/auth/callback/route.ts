@@ -18,8 +18,11 @@ export async function GET(request: Request) {
     if (!error) {
       return NextResponse.redirect(`${origin}${next}`)
     }
+    console.error('OAuth code exchange failed:', error.message)
+    return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(error.message)}`)
   }
 
-  // Something went wrong — send back to login with an error flag
+  // No code param at all — Supabase itself likely redirected here with an error
+  console.error('Auth callback hit with no code param:', request.url)
   return NextResponse.redirect(`${origin}/login?error=auth_callback_failed`)
 }

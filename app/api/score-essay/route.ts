@@ -29,7 +29,10 @@ const ScoreEssaySchema = z.object({
   examType: z.enum(['UPCAT', 'ACET', 'DCAT', 'USTET', 'General']),
 })
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
+function getGroqClient(): Groq | null {
+  if (!process.env.GROQ_API_KEY) return null
+  return new Groq({ apiKey: process.env.GROQ_API_KEY })
+}
 
 // ============================================================
 // Groq scoring call
@@ -89,6 +92,9 @@ Respond with ONLY valid JSON (no markdown, no explanation outside JSON):
 For grammarIssues, find up to 8 real issues — look closely, including subtler style/precision issues, not just outright errors. The "excerpt" MUST be copied character-for-character from the essay so it can be located and highlighted — do not paraphrase it. The "replacement" MUST be literal corrected text such that essay.replace(excerpt, replacement) produces correct text.`
 
   const userMessage = prompt ? `Essay Prompt: ${prompt}\n\nStudent Essay:\n${essay}` : `Student Essay:\n${essay}`
+
+  const groq = getGroqClient()
+  if (!groq) throw new Error('GROQ_API_KEY is not configured')
 
   const completion = await groq.chat.completions.create({
     model: 'llama-3.3-70b-versatile',

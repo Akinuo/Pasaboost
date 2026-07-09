@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, PenLine, History, BarChart3, Lightbulb, Trophy, User,
@@ -27,7 +27,6 @@ export default function AppSidebar({ children }: { children: React.ReactNode }) 
   const { user, logout } = useAuth()
   const { theme, setTheme, resolvedTheme } = useTheme()
   const pathname = usePathname()
-  const router = useRouter()
 
   const handleLogout = async () => {
     await logout()

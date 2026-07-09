@@ -24,9 +24,15 @@ const OutlineSchema = z.object({
   examType: z.enum(['UPCAT', 'ACET', 'DCAT', 'USTET', 'General']),
 })
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
+function getGroqClient(): Groq | null {
+  if (!process.env.GROQ_API_KEY) return null
+  return new Groq({ apiKey: process.env.GROQ_API_KEY })
+}
 
 async function generateOutline(prompt: string, examType: string): Promise<EssayOutline> {
+  const groq = getGroqClient()
+  if (!groq) throw new Error('GROQ_API_KEY is not configured')
+
   const systemPrompt = `You are an essay-writing coach helping a Filipino student brainstorm BEFORE they write, for the ${examType} college entrance exam. Give STRUCTURE ONLY — thesis angle, section headers, and short bullet-point ideas (max ~8 words each). NEVER write full sentences, paragraphs, or example essay text; the student must write it themselves. Respond with ONLY valid JSON:
 {
   "thesisSuggestion": "<one short sentence suggesting a possible angle/position, phrased as a suggestion not a finished thesis>",

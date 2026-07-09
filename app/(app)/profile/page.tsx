@@ -19,7 +19,6 @@ export default function ProfilePage() {
   const [profileError, setProfileError] = useState<string | null>(null)
   const [passwordSuccess, setPasswordSuccess] = useState(false)
   const [passwordError, setPasswordError] = useState<string | null>(null)
-  const [showCurrentPw, setShowCurrentPw] = useState(false)
   const [showNewPw, setShowNewPw] = useState(false)
   const [leaderboardEnabled, setLeaderboardEnabled] = useState(false)
   const [emailNotifs, setEmailNotifs] = useState(false)
