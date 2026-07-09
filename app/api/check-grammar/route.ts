@@ -23,11 +23,17 @@ const CheckGrammarSchema = z.object({
   essay: z.string().min(50, 'Essay must be at least 50 characters').max(10000, 'Essay must be under 10,000 characters'),
 })
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
+function getGroqClient(): Groq | null {
+  if (!process.env.GROQ_API_KEY) return null
+  return new Groq({ apiKey: process.env.GROQ_API_KEY })
+}
 
 const VALID_TYPES: GrammarIssueType[] = ['grammar', 'spelling', 'punctuation', 'style']
 
 async function findGrammarIssues(essay: string): Promise<GrammarIssue[]> {
+  const groq = getGroqClient()
+  if (!groq) throw new Error('GROQ_API_KEY is not configured')
+
   const systemPrompt = `You are a meticulous proofreader reviewing a Filipino student's college-entrance-exam essay draft. Find real grammar, spelling, punctuation, and style issues — look closely, including subtler precision/style issues, not just outright errors.
 
 Respond with ONLY valid JSON (no markdown, no explanation outside JSON):

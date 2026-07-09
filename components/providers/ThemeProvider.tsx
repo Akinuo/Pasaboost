@@ -18,8 +18,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    setMounted(true)
-    setThemeState((localStorage.getItem('pasaboost-theme') as Theme) || 'system')
+    ;(() => {
+      setMounted(true)
+      setThemeState((localStorage.getItem('pasaboost-theme') as Theme) || 'system')
+    })()
   }, [])
 
   useEffect(() => {

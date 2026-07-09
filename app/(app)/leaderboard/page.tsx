@@ -28,13 +28,17 @@ export default function LeaderboardPage() {
   const [userRank, setUserRank] = useState<number | null>(null)
 
   useEffect(() => {
-    setLoading(true)
+    let cancelled = false
     const supabase = createClient()
 
-    Promise.all([
-      getLeaderboard(supabase, activeExam, 20),
-      user ? getUserScores(supabase, user.id, { examType: activeExam, limit: 50 }) : Promise.resolve([]),
-    ]).then(([lb, userScores]) => {
+    ;(async () => {
+      setLoading(true)
+      const [lb, userScores] = await Promise.all([
+        getLeaderboard(supabase, activeExam, 20),
+        user ? getUserScores(supabase, user.id, { examType: activeExam, limit: 50 }) : Promise.resolve([]),
+      ])
+      if (cancelled) return
+
       setEntries(lb)
 
       if (userScores.length > 0) {
@@ -45,7 +49,9 @@ export default function LeaderboardPage() {
       }
 
       setLoading(false)
-    })
+    })()
+
+    return () => { cancelled = true }
   }, [activeExam, user])
 
   return (

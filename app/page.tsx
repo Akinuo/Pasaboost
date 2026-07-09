@@ -175,7 +175,7 @@ export default function LandingPage() {
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
             <h2 className="text-4xl font-display font-bold text-foreground mb-6">Your dream school is within reach.</h2>
             <p className="text-muted-foreground text-lg mb-10">
-              Join students who are using AI feedback to consistently improve their essay scores. Start practicing today — it's completely free.
+              Join students who are using AI feedback to consistently improve their essay scores. Start practicing today — it&apos;s completely free.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
               <Link href="/register" className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl shadow-lg hover:opacity-90 transition-opacity">
@@ -197,7 +197,7 @@ export default function LandingPage() {
 
       <footer className="border-t border-border py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-muted-foreground">
-          <p>PasaBoost — Thesis Project: "An AI-Powered Essay Coaching System for Enhancing College Entrance Examination Writing Performance"</p>
+          <p>PasaBoost — Thesis Project: &ldquo;An AI-Powered Essay Coaching System for Enhancing College Entrance Examination Writing Performance&rdquo;</p>
           <p className="mt-1">Built for Filipino students. © {new Date().getFullYear()}</p>
         </div>
       </footer>
