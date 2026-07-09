@@ -104,7 +104,7 @@ export default function GrammarHighlightedTextarea({
       <mark
         key={`m-${i}`}
         onClick={(e) => handleMarkClick(e, r.issue)}
-        className="bg-amber-200/70 dark:bg-amber-900/50 text-transparent rounded px-0.5 cursor-pointer pointer-events-auto border-b-2 border-amber-500 dark:border-amber-600 hover:bg-amber-300/70 dark:hover:bg-amber-800/60 transition-colors"
+        className="bg-amber-200/70 dark:bg-amber-900/50 text-amber-950 dark:text-amber-100 rounded px-0.5 cursor-pointer pointer-events-auto border-b-2 border-amber-500 dark:border-amber-600 hover:bg-amber-300/70 dark:hover:bg-amber-800/60 transition-colors"
       >
         {value.slice(r.start, r.end)}
       </mark>
