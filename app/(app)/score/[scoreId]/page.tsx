@@ -231,7 +231,7 @@ export default function ScoreResultPage({ params }: { params: Promise<{ scoreId:
             {score.paragraphRewrites.map((pr, i) => (
               <div key={i} className="rounded-lg border border-border bg-card overflow-hidden">
                 <div className="px-5 py-3 bg-muted/50 border-b border-border">
-                  <h3 className="font-display font-bold text-sm text-foreground">Paragraph {i + 1} — Rewrite</h3>
+                  <h3 className="font-display font-semibold text-sm text-foreground">Paragraph {i + 1} — Rewrite</h3>
                 </div>
                 <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
                   <div className="p-5">

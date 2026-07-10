@@ -366,7 +366,7 @@ function EssayEditorInner() {
             </button>
             <AnimatePresence>
               {showDrafts && (
-                <motion.div className="absolute top-full mt-1 left-0 w-72 bg-card border border-border rounded-xl shadow-xl z-20 overflow-hidden" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}>
+                <motion.div className="absolute top-full mt-1 left-0 w-72 bg-card border border-border rounded-lg shadow-xl z-20 overflow-hidden" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}>
                   <div className="p-2 border-b border-border">
                     <p className="text-xs font-medium text-muted-foreground px-2">Saved Drafts</p>
                   </div>
@@ -466,7 +466,7 @@ function EssayEditorInner() {
         )}
       </div>
 
-      <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Essay title…" className="w-full mb-3 px-0 py-2 text-2xl font-display font-bold bg-transparent border-none text-foreground placeholder:text-muted-foreground/40 focus:outline-none" />
+      <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Essay title…" className="w-full mb-3 px-0 py-2 text-2xl font-display font-semibold bg-transparent border-none text-foreground placeholder:text-muted-foreground/40 focus:outline-none" />
 
       <GrammarHighlightedTextarea
         textareaRef={textareaRef}
@@ -514,7 +514,7 @@ function EssayEditorInner() {
       </div>
 
       {submitError && (
-        <motion.div className="mt-4 flex items-start gap-2 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+        <motion.div className="mt-4 flex items-start gap-2 p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
           <div>
             <p className="font-medium">Scoring failed</p>
@@ -526,9 +526,9 @@ function EssayEditorInner() {
       <AnimatePresence>
         {showOutlinePanel && (
           <motion.div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowOutlinePanel(false)}>
-            <motion.div className="bg-card border border-border rounded-2xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-y-auto" initial={{ scale: 0.96, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.96, opacity: 0 }} onClick={(e) => e.stopPropagation()}>
+            <motion.div className="bg-card border border-border rounded-lg shadow-2xl max-w-lg w-full max-h-[80vh] overflow-y-auto" initial={{ scale: 0.96, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.96, opacity: 0 }} onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between px-5 py-4 border-b border-border sticky top-0 bg-card">
-                <h2 className="font-display font-bold text-foreground flex items-center gap-2">
+                <h2 className="font-display font-semibold text-foreground flex items-center gap-2">
                   <Sparkles size={16} className="text-primary" />
                   Outline Assistant
                 </h2>
@@ -585,9 +585,9 @@ function EssayEditorInner() {
       <AnimatePresence>
         {showIntegrityPanel && (
           <motion.div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowIntegrityPanel(false)}>
-            <motion.div className="bg-card border border-border rounded-2xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-y-auto" initial={{ scale: 0.96, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.96, opacity: 0 }} onClick={(e) => e.stopPropagation()}>
+            <motion.div className="bg-card border border-border rounded-lg shadow-2xl max-w-lg w-full max-h-[80vh] overflow-y-auto" initial={{ scale: 0.96, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.96, opacity: 0 }} onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between px-5 py-4 border-b border-border sticky top-0 bg-card">
-                <h2 className="font-display font-bold text-foreground flex items-center gap-2">
+                <h2 className="font-display font-semibold text-foreground flex items-center gap-2">
                   <ShieldCheck size={16} className="score-good" />
                   AI &amp; Originality Check
                 </h2>
@@ -679,7 +679,7 @@ function EssayEditorInner() {
 // useSearchParams requires a Suspense boundary in the App Router
 export default function EssayEditorPage() {
   return (
-    <Suspense fallback={<div className="max-w-4xl mx-auto animate-pulse h-96 bg-muted rounded-2xl" />}>
+    <Suspense fallback={<div className="max-w-4xl mx-auto animate-pulse h-96 bg-muted rounded-lg" />}>
       <EssayEditorInner />
     </Suspense>
   )

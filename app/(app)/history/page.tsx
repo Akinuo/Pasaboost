@@ -60,9 +60,9 @@ export default function HistoryPage() {
       </div>
 
       {scores.length === 0 ? (
-        <div className="border-2 border-dashed border-border rounded-2xl p-16 text-center">
+        <div className="border-2 border-dashed border-border rounded-lg p-16 text-center">
           <FileText size={40} className="mx-auto text-muted-foreground/40 mb-4" />
-          <h2 className="text-xl font-display font-bold text-foreground mb-2">No essays yet</h2>
+          <h2 className="text-xl font-display font-semibold text-foreground mb-2">No essays yet</h2>
           <p className="text-muted-foreground mb-6">Submit your first essay to start building your history.</p>
           <Link href="/editor" className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors">
             <PenLine size={16} />
@@ -74,7 +74,7 @@ export default function HistoryPage() {
           <div className="flex flex-wrap gap-3 mb-6">
             <div className="relative flex-1 min-w-48">
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search essays…" className="w-full pl-9 pr-4 py-2.5 text-sm rounded-xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground" />
+              <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search essays…" className="w-full pl-9 pr-4 py-2.5 text-sm rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground" />
             </div>
             <div className="flex gap-1.5 flex-wrap">
               {EXAM_FILTERS.map((ef) => (
@@ -85,7 +85,7 @@ export default function HistoryPage() {
             </div>
             <div className="relative">
               <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-              <select value={sortBy} onChange={(e) => setSortBy(e.target.value as typeof sortBy)} className="pl-8 pr-3 py-2.5 text-sm rounded-xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer">
+              <select value={sortBy} onChange={(e) => setSortBy(e.target.value as typeof sortBy)} className="pl-8 pr-3 py-2.5 text-sm rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer">
                 <option value="newest">Newest first</option>
                 <option value="highest">Highest score</option>
                 <option value="lowest">Lowest score</option>
@@ -103,7 +103,7 @@ export default function HistoryPage() {
             ) : (
               filtered.map((score, i) => (
                 <motion.div key={score.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                  <Link href={`/score/${score.id}`} className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:shadow-md transition-all group">
+                  <Link href={`/score/${score.id}`} className="flex items-center gap-4 p-4 rounded-lg border border-border bg-card hover:shadow-md transition-all group">
                     <div className={`w-14 h-14 rounded-lg flex flex-col items-center justify-center flex-shrink-0 border ${getScoreBgColor(score.totalScore)}`}>
                       <span className={`text-lg font-display font-semibold leading-none ${getScoreColor(score.totalScore)}`}>{score.totalScore}</span>
                       <span className="text-xs text-muted-foreground">/100</span>
@@ -140,10 +140,10 @@ function HistorySkeleton() {
     <div className="animate-pulse space-y-3">
       <div className="h-8 w-40 bg-muted rounded" />
       <div className="flex gap-3">
-        <div className="h-10 flex-1 bg-muted rounded-xl" />
-        <div className="h-10 w-48 bg-muted rounded-xl" />
+        <div className="h-10 flex-1 bg-muted rounded-lg" />
+        <div className="h-10 w-48 bg-muted rounded-lg" />
       </div>
-      {[...Array(5)].map((_, i) => <div key={i} className="h-20 bg-muted rounded-xl" />)}
+      {[...Array(5)].map((_, i) => <div key={i} className="h-20 bg-muted rounded-lg" />)}
     </div>
   )
 }

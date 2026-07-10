@@ -120,6 +120,16 @@
 .score-band-average { background-color: hsl(var(--score-average) / 0.08); border-color: hsl(var(--score-average) / 0.3); }
 .score-band-poor { background-color: hsl(var(--score-poor) / 0.08); border-color: hsl(var(--score-poor) / 0.3); }
 
+::selection {
+  background-color: hsl(var(--primary) / 0.25);
+  color: hsl(var(--foreground));
+}
+
+:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { @apply bg-transparent; }
 ::-webkit-scrollbar-thumb { @apply bg-border rounded-full; }

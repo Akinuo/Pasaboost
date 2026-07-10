@@ -108,9 +108,9 @@ export default function PromptsPage() {
       <div className="flex flex-wrap gap-3 mb-6">
         <div className="relative flex-1 min-w-48">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search prompts or keywords…" className="w-full pl-9 pr-4 py-2.5 text-sm rounded-xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search prompts or keywords…" className="w-full pl-9 pr-4 py-2.5 text-sm rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground" />
         </div>
-        <button onClick={handleRandom} className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border border-input bg-background hover:bg-accent transition-colors">
+        <button onClick={handleRandom} className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg border border-input bg-background hover:bg-accent transition-colors">
           <Shuffle size={14} />
           Random
         </button>
@@ -140,7 +140,7 @@ export default function PromptsPage() {
 
       <div className="grid md:grid-cols-2 gap-4">
         {filtered.map((prompt, i) => (
-          <motion.div key={prompt.id} className="bg-card border border-border rounded-xl p-5 hover:shadow-md transition-shadow flex flex-col" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.04, 0.4) }}>
+          <motion.div key={prompt.id} className="bg-card border border-border rounded-lg p-5 hover:shadow-md transition-shadow flex flex-col" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.04, 0.4) }}>
             <div className="flex items-center gap-2 mb-3 flex-wrap">
               <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{prompt.category}</span>
               <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${DIFFICULTY_COLORS[prompt.difficulty]}`}>{prompt.difficulty}</span>

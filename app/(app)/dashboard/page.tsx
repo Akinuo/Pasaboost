@@ -122,14 +122,14 @@ export default function DashboardPage() {
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display font-bold text-lg text-foreground">Recent Essays</h2>
+            <h2 className="font-display font-semibold text-lg text-foreground">Recent Essays</h2>
             <Link href="/history" className="text-sm text-primary hover:underline flex items-center gap-1">
               View all <ArrowRight size={14} />
             </Link>
           </div>
 
           {!loading && recentScores.length === 0 ? (
-            <div className="border-2 border-dashed border-border rounded-2xl p-12 text-center">
+            <div className="border-2 border-dashed border-border rounded-lg p-12 text-center">
               <PenLine size={32} className="mx-auto text-muted-foreground/50 mb-3" />
               <p className="font-medium text-foreground mb-1">No essays yet</p>
               <p className="text-sm text-muted-foreground mb-4">Write and submit your first essay to get AI feedback.</p>
@@ -142,7 +142,7 @@ export default function DashboardPage() {
             <div className="space-y-3">
               {recentScores.map((score, i) => (
                 <motion.div key={score.id} custom={i} variants={cardVariants} initial="hidden" animate="visible">
-                  <Link href={`/score/${score.id}`} className="block p-4 rounded-xl border border-border bg-card hover:shadow-md transition-shadow">
+                  <Link href={`/score/${score.id}`} className="block p-4 rounded-lg border border-border bg-card hover:shadow-md transition-shadow">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
@@ -155,7 +155,7 @@ export default function DashboardPage() {
                         <p className="text-sm text-muted-foreground line-clamp-1">{score.prompt || score.essay.slice(0, 80) + '…'}</p>
                       </div>
                       <div className="flex-shrink-0 text-right">
-                        <div className={`text-2xl font-display font-bold ${getScoreColor(score.totalScore)}`}>{score.totalScore}</div>
+                        <div className={`text-2xl font-display font-semibold ${getScoreColor(score.totalScore)}`}>{score.totalScore}</div>
                         <div className="text-xs text-muted-foreground">/ 100</div>
                       </div>
                     </div>
@@ -175,7 +175,7 @@ export default function DashboardPage() {
 
         <div className="space-y-5">
           <div>
-            <h2 className="font-display font-bold text-lg text-foreground mb-4">Quick Actions</h2>
+            <h2 className="font-display font-semibold text-lg text-foreground mb-4">Quick Actions</h2>
             <div className="space-y-2">
               {[
                 { href: '/editor', icon: PenLine, label: 'New Essay', sub: 'Write and get scored' },

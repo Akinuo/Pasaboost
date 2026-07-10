@@ -69,7 +69,7 @@ export default function LeaderboardPage() {
         </p>
       </div>
 
-      <div className="flex gap-1 p-1 bg-muted rounded-xl mb-6 overflow-x-auto">
+      <div className="flex gap-1 p-1 bg-muted rounded-lg mb-6 overflow-x-auto">
         {EXAM_TABS.map((tab) => (
           <button key={tab.label} onClick={() => setActiveExam(tab.value)} className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap min-w-fit ${activeExam === tab.value ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}>
             {tab.label}
@@ -78,7 +78,7 @@ export default function LeaderboardPage() {
       </div>
 
       {!loading && entries.length === 0 && (
-        <div className="text-center py-16 border-2 border-dashed border-border rounded-2xl">
+        <div className="text-center py-16 border-2 border-dashed border-border rounded-lg">
           <Trophy size={36} className="mx-auto text-muted-foreground/40 mb-3" />
           <p className="font-medium text-foreground mb-1">No leaderboard entries yet</p>
           <p className="text-sm text-muted-foreground">Be the first to opt in from your Profile settings!</p>
@@ -116,7 +116,7 @@ export default function LeaderboardPage() {
 
       {loading ? (
         <div className="space-y-2 animate-pulse">
-          {[...Array(8)].map((_, i) => <div key={i} className="h-16 bg-muted rounded-xl" />)}
+          {[...Array(8)].map((_, i) => <div key={i} className="h-16 bg-muted rounded-lg" />)}
         </div>
       ) : entries.length > 0 ? (
         <div className="bg-card border border-border rounded-lg overflow-hidden">
@@ -140,7 +140,7 @@ export default function LeaderboardPage() {
                     {entry.badge && <p className="text-xs text-muted-foreground">{entry.badge}</p>}
                   </div>
                 </div>
-                <div className={`col-span-2 text-center text-lg font-display font-bold ${getScoreColor(entry.averageScore)}`}>{entry.averageScore}</div>
+                <div className={`col-span-2 text-center text-lg font-display font-semibold ${getScoreColor(entry.averageScore)}`}>{entry.averageScore}</div>
                 <div className="col-span-2 text-center text-sm text-muted-foreground">{entry.essayCount}</div>
                 <div className="col-span-2 text-center">
                   <span className={`text-sm font-medium flex items-center justify-center gap-1 ${entry.improvement > 0 ? 'score-good' : 'text-muted-foreground'}`}>
@@ -155,7 +155,7 @@ export default function LeaderboardPage() {
       ) : null}
 
       {userAvgScore !== null && (
-        <div className="mt-4 p-4 rounded-xl border border-primary/30 bg-primary/5 flex items-center gap-3">
+        <div className="mt-4 p-4 rounded-lg border border-primary/30 bg-primary/5 flex items-center gap-3">
           <Star size={16} className="text-primary" />
           <div className="flex-1">
             <p className="text-sm font-medium text-foreground">Your position</p>
