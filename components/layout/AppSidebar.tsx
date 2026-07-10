@@ -157,7 +157,7 @@ export default function AppSidebar({ children }: { children: React.ReactNode }) 
                     <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                   </div>
                 </div>
-                <button onClick={() => setSidebarOpen(false)} className="p-1.5 rounded-md hover:bg-accent flex-shrink-0">
+                <button onClick={() => setSidebarOpen(false)} className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md hover:bg-accent flex-shrink-0" aria-label="Close menu">
                   <X size={18} />
                 </button>
               </div>
@@ -197,10 +197,10 @@ export default function AppSidebar({ children }: { children: React.ReactNode }) 
             <span className="font-display font-semibold text-foreground">PasaBoost</span>
           </div>
           <div className="flex items-center gap-1">
-            <button onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')} className="p-2 rounded-md hover:bg-accent">
+            <button onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')} className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md hover:bg-accent" aria-label="Toggle theme">
               <ThemeIcon size={18} />
             </button>
-            <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-md hover:bg-accent">
+            <button onClick={() => setSidebarOpen(true)} className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md hover:bg-accent" aria-label="Open menu">
               <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
                 <span className="text-primary-foreground text-[11px] font-semibold">{displayName[0]?.toUpperCase() ?? 'U'}</span>
               </div>

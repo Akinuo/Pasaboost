@@ -29,7 +29,7 @@
     /* semantic score-band scale — muted, single-family, not candy-bright */
     --score-excellent: 148 32% 32%;
     --score-good: 16 72% 42%;
-    --score-average: 38 55% 42%;
+    --score-average: 38 65% 34%;
     --score-poor: 6 55% 42%;
 
     /* curated 5-step data palette for charts/rubric dimensions — desaturated, cohesive */

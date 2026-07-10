@@ -425,7 +425,7 @@ function EssayEditorInner() {
           </button>
 
           {currentDraftId && (
-            <button onClick={handleDeleteDraft} className="p-2 text-sm rounded-lg border border-input bg-background hover:bg-destructive/10 hover:text-destructive transition-colors">
+            <button onClick={handleDeleteDraft} className="min-w-[44px] min-h-[40px] flex items-center justify-center text-sm rounded-lg border border-input bg-background hover:bg-destructive/10 hover:text-destructive transition-colors" aria-label="Delete draft">
               <Trash2 size={14} />
             </button>
           )}
@@ -532,7 +532,7 @@ function EssayEditorInner() {
                   <Sparkles size={16} className="text-primary" />
                   Outline Assistant
                 </h2>
-                <button onClick={() => setShowOutlinePanel(false)} className="p-1.5 rounded-lg hover:bg-accent transition-colors"><X size={16} /></button>
+                <button onClick={() => setShowOutlinePanel(false)} className="min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg hover:bg-accent transition-colors" aria-label="Close outline panel"><X size={16} /></button>
               </div>
               <div className="p-5">
                 {outlineLoading && (
@@ -591,7 +591,7 @@ function EssayEditorInner() {
                   <ShieldCheck size={16} className="score-good" />
                   AI &amp; Originality Check
                 </h2>
-                <button onClick={() => setShowIntegrityPanel(false)} className="p-1.5 rounded-lg hover:bg-accent transition-colors"><X size={16} /></button>
+                <button onClick={() => setShowIntegrityPanel(false)} className="min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg hover:bg-accent transition-colors" aria-label="Close integrity panel"><X size={16} /></button>
               </div>
               <div className="p-5 space-y-5">
                 {integrityLoading && (
