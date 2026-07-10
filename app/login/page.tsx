@@ -118,7 +118,7 @@ function LoginForm() {
               {errors.password && <p className="text-xs text-destructive mt-1">{errors.password.message}</p>}
             </div>
 
-            <button type="submit" disabled={isLoading || isGoogleLoading} className="w-full py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+            <button type="submit" disabled={isLoading || isGoogleLoading} className="glow-primary w-full py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
               {isLoading && <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />}
               Sign in
             </button>

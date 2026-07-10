@@ -1,7 +1,7 @@
 export default function LogoMark({ size = 36 }: { size?: number }) {
   return (
     <div
-      className="rounded-lg bg-primary flex items-center justify-center shrink-0"
+      className="glow-primary rounded-lg bg-primary flex items-center justify-center shrink-0"
       style={{ width: size, height: size }}
     >
       <svg

@@ -4,73 +4,74 @@
 
 @layer base {
   :root {
-    /* warm paper + ink, terracotta accent — no default shadcn blue */
-    --background: 32 25% 97%;
-    --foreground: 20 20% 12%;
-    --card: 30 30% 99%;
-    --card-foreground: 20 20% 12%;
-    --popover: 30 30% 99%;
-    --popover-foreground: 20 20% 12%;
-    --primary: 16 72% 42%;
-    --primary-foreground: 30 40% 98%;
-    --secondary: 30 15% 93%;
-    --secondary-foreground: 20 20% 15%;
-    --muted: 30 15% 94%;
-    --muted-foreground: 20 10% 42%;
-    --accent: 30 20% 91%;
-    --accent-foreground: 20 20% 15%;
-    --destructive: 6 65% 42%;
-    --destructive-foreground: 30 40% 98%;
-    --border: 30 15% 87%;
-    --input: 30 15% 87%;
-    --ring: 16 72% 42%;
+    /* cool paper + navy ink, electric blue accent */
+    --background: 220 25% 98%;
+    --foreground: 222 47% 11%;
+    --card: 220 25% 99%;
+    --card-foreground: 222 47% 11%;
+    --popover: 220 25% 99%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 217 91% 48%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 220 14% 93%;
+    --secondary-foreground: 222 40% 15%;
+    --muted: 220 14% 94%;
+    --muted-foreground: 220 9% 42%;
+    --accent: 220 16% 91%;
+    --accent-foreground: 222 40% 15%;
+    --destructive: 0 72% 48%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 220 13% 88%;
+    --input: 220 13% 88%;
+    --ring: 217 91% 48%;
     --radius: 0.625rem;
 
-    /* semantic score-band scale — muted, single-family, not candy-bright */
-    --score-excellent: 148 32% 32%;
-    --score-good: 16 72% 42%;
-    --score-average: 38 65% 34%;
-    --score-poor: 6 55% 42%;
+    /* semantic score-band scale */
+    --score-excellent: 158 45% 32%;
+    --score-good: 217 91% 48%;
+    --score-average: 38 70% 34%;
+    --score-poor: 0 65% 45%;
 
-    /* curated 5-step data palette for charts/rubric dimensions — desaturated, cohesive */
-    --chart-1: 16 72% 42%;
-    --chart-2: 172 28% 30%;
-    --chart-3: 38 48% 45%;
-    --chart-4: 265 18% 42%;
-    --chart-5: 20 12% 45%;
+    /* curated data palette for charts/rubric dimensions */
+    --chart-1: 217 91% 48%;
+    --chart-2: 188 60% 38%;
+    --chart-3: 262 45% 52%;
+    --chart-4: 38 65% 45%;
+    --chart-5: 220 10% 45%;
   }
 
   .dark {
-    --background: 20 16% 9%;
-    --foreground: 30 20% 94%;
-    --card: 20 14% 12%;
-    --card-foreground: 30 20% 94%;
-    --popover: 20 14% 12%;
-    --popover-foreground: 30 20% 94%;
-    --primary: 16 75% 55%;
-    --primary-foreground: 20 25% 10%;
-    --secondary: 20 12% 18%;
-    --secondary-foreground: 30 15% 92%;
-    --muted: 20 12% 16%;
-    --muted-foreground: 30 10% 65%;
-    --accent: 20 12% 19%;
-    --accent-foreground: 30 15% 92%;
-    --destructive: 6 60% 48%;
-    --destructive-foreground: 30 20% 96%;
-    --border: 20 12% 20%;
-    --input: 20 12% 20%;
-    --ring: 16 75% 55%;
+    /* deep navy-black base with an electric/neon blue accent */
+    --background: 224 45% 6%;
+    --foreground: 210 25% 95%;
+    --card: 224 32% 13%;
+    --card-foreground: 210 25% 95%;
+    --popover: 224 32% 13%;
+    --popover-foreground: 210 25% 95%;
+    --primary: 210 100% 60%;
+    --primary-foreground: 224 45% 8%;
+    --secondary: 224 25% 16%;
+    --secondary-foreground: 210 20% 92%;
+    --muted: 224 22% 14%;
+    --muted-foreground: 220 15% 65%;
+    --accent: 224 25% 18%;
+    --accent-foreground: 210 20% 92%;
+    --destructive: 0 70% 58%;
+    --destructive-foreground: 210 25% 96%;
+    --border: 224 18% 24%;
+    --input: 224 18% 24%;
+    --ring: 210 100% 60%;
 
-    --score-excellent: 148 26% 52%;
-    --score-good: 16 75% 58%;
-    --score-average: 38 60% 58%;
-    --score-poor: 6 60% 58%;
+    --score-excellent: 158 40% 55%;
+    --score-good: 210 100% 60%;
+    --score-average: 38 75% 62%;
+    --score-poor: 0 65% 60%;
 
-    --chart-1: 16 75% 58%;
-    --chart-2: 172 24% 48%;
-    --chart-3: 38 55% 60%;
-    --chart-4: 265 22% 62%;
-    --chart-5: 20 10% 62%;
+    --chart-1: 210 100% 60%;
+    --chart-2: 188 65% 55%;
+    --chart-3: 262 55% 68%;
+    --chart-4: 38 75% 62%;
+    --chart-5: 220 12% 62%;
   }
 }
 
@@ -78,10 +79,23 @@
   * { @apply border-border; }
   body { @apply bg-background text-foreground; font-feature-settings: "rlig" 1, "calt" 1; }
   html { scroll-behavior: smooth; }
+
+  /* Ambient glow behind the page in dark mode — the "neon on navy" feel.
+     Fixed + pointer-events:none so it sits behind content without affecting layout. */
+  .dark body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, hsl(var(--primary) / 0.16), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 100% 20%, hsl(var(--primary) / 0.10), transparent 55%);
+  }
 }
 
 @layer components {
-  /* Solid ink/terracotta wordmark treatment — replaces the blue-to-indigo gradient text */
+  /* Solid wordmark treatment — no gradient text */
   .brand-mark {
     @apply font-display font-semibold tracking-tight text-foreground;
   }
@@ -107,6 +121,27 @@
   /* Small caps eyebrow label — editorial detail used above section headings */
   .eyebrow {
     @apply text-xs font-semibold tracking-[0.14em] uppercase text-primary;
+  }
+
+  /* Neon glow — for primary CTAs and the brand mark. Subtle in light mode,
+     genuinely glowing in dark mode where it reads against the navy base. */
+  .glow-primary {
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.1), 0 4px 16px -4px hsl(var(--primary) / 0.35);
+  }
+  .dark .glow-primary {
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.25), 0 0 24px -2px hsl(var(--primary) / 0.55), 0 4px 20px -4px hsl(var(--primary) / 0.4);
+  }
+  .glow-primary:hover {
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.15), 0 6px 22px -4px hsl(var(--primary) / 0.45);
+  }
+  .dark .glow-primary:hover {
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.35), 0 0 32px -2px hsl(var(--primary) / 0.7), 0 6px 24px -4px hsl(var(--primary) / 0.5);
+  }
+
+  /* Glass surface — translucent + blurred card, used sparingly for hero/header
+     panels in dark mode where it reads as premium rather than gimmicky. */
+  .glass-surface {
+    @apply bg-card/70 backdrop-blur-md border border-white/10;
   }
 }
 

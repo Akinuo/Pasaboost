@@ -92,7 +92,7 @@ export default function LandingPage() {
               use, then shows you exactly what to fix — line by line, week by week.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link href="/register" className="inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-primary text-primary-foreground font-semibold rounded-md hover:bg-primary/90 transition-colors">
+              <Link href="/register" className="glow-primary inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-primary text-primary-foreground font-semibold rounded-md hover:bg-primary/90 transition-all">
                 Start practicing free
                 <ArrowRight size={18} />
               </Link>
@@ -196,7 +196,7 @@ export default function LandingPage() {
               Join students using AI feedback to consistently improve their essay scores. Start practicing today — it&apos;s completely free.
             </p>
             <div className="flex justify-center mb-8">
-              <Link href="/register" className="inline-flex items-center gap-2 px-7 py-3.5 bg-primary text-primary-foreground font-semibold rounded-md hover:bg-primary/90 transition-colors">
+              <Link href="/register" className="glow-primary inline-flex items-center gap-2 px-7 py-3.5 bg-primary text-primary-foreground font-semibold rounded-md hover:bg-primary/90 transition-all">
                 Create free account
                 <ArrowRight size={18} />
               </Link>

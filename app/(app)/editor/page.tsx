@@ -430,7 +430,7 @@ function EssayEditorInner() {
             </button>
           )}
 
-          <button onClick={handleSubmit} disabled={isSubmitting || wordCount < MIN_WORDS} className="flex items-center gap-2 px-5 py-2 text-sm font-semibold bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50">
+          <button onClick={handleSubmit} disabled={isSubmitting || wordCount < MIN_WORDS} className="glow-primary flex items-center gap-2 px-5 py-2 text-sm font-semibold bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all disabled:opacity-50">
             {isSubmitting ? (<><Loader2 size={14} className="animate-spin" />Scoring…</>) : (<><Send size={14} />Get Score</>)}
           </button>
         </div>

@@ -52,14 +52,16 @@ export default function ScoreResultPage({ params }: { params: Promise<{ scoreId:
       </Link>
 
       <motion.div className="rounded-lg overflow-hidden border border-border shadow-sm mb-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="px-6 py-6 text-[hsl(30_20%_94%)]" style={{ backgroundColor: 'hsl(20 16% 9%)' }}>
+        <div className="px-6 py-6 text-[hsl(210_25%_95%)] relative overflow-hidden" style={{ backgroundColor: 'hsl(224 45% 6%)' }}>
+          <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 500px 300px at 20% 0%, hsl(210 100% 60% / 0.25), transparent 60%)' }} />
+          <div className="relative">
           <div className="flex items-start justify-between flex-wrap gap-4">
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-white/10 text-[hsl(30_20%_94%)]">{score.examType}</span>
+                <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-white/10 text-[hsl(210_25%_95%)]">{score.examType}</span>
                 <span className="text-xs text-white/60">{formatDateTime(score.createdAt)}</span>
               </div>
-              <h1 className="text-2xl font-display font-semibold text-[hsl(30_20%_94%)] mb-1">Essay Score Report</h1>
+              <h1 className="text-2xl font-display font-semibold text-[hsl(210_25%_95%)] mb-1">Essay Score Report</h1>
               {score.prompt && <p className="text-white/70 text-sm max-w-lg line-clamp-2">{score.prompt}</p>}
             </div>
             <div className="text-right">
@@ -69,7 +71,7 @@ export default function ScoreResultPage({ params }: { params: Promise<{ scoreId:
               <div className="text-white/60 text-sm">out of 100</div>
               <div className="mt-1 text-sm font-medium text-white/80">{score.estimatedBand}</div>
               {!!score.aiPenaltyApplied && (
-                <div className="mt-1.5 text-xs" style={{ color: 'hsl(6 55% 72%)' }}>
+                <div className="mt-1.5 text-xs" style={{ color: 'hsl(0 65% 75%)' }}>
                   {score.preAIPenaltyScore} − {score.aiPenaltyApplied} (AI-detection penalty)
                 </div>
               )}
@@ -86,6 +88,7 @@ export default function ScoreResultPage({ params }: { params: Promise<{ scoreId:
                 <div className="text-sm font-bold text-white">{r.score}/20</div>
               </div>
             ))}
+          </div>
           </div>
         </div>
 
