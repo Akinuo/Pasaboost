@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
-import type { ScoreBand, ScoreDimension } from '@/types'
+import type { ScoreBand, ScoreDimension, Difficulty } from '@/types'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -135,6 +135,16 @@ export const EXAM_COLORS: Record<string, string> = {
   DCAT: 'bg-[hsl(var(--chart-3)/0.12)] text-[hsl(var(--chart-3))]',
   USTET: 'bg-[hsl(var(--chart-4)/0.14)] text-[hsl(var(--chart-4))]',
   General: 'bg-[hsl(var(--chart-5)/0.14)] text-[hsl(var(--chart-5))]',
+}
+
+// ============================================================
+// Difficulty-level colors — green/yellow/red, from easiest to hardest
+// ============================================================
+
+export const LEVEL_COLORS: Record<Difficulty, string> = {
+  Beginner: 'bg-[hsl(var(--level-beginner)/0.12)] text-[hsl(var(--level-beginner))]',
+  Intermediate: 'bg-[hsl(var(--level-intermediate)/0.14)] text-[hsl(var(--level-intermediate))]',
+  Advanced: 'bg-[hsl(var(--level-advanced)/0.14)] text-[hsl(var(--level-advanced))]',
 }
 
 // ============================================================

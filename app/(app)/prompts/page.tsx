@@ -5,16 +5,10 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Lightbulb, BookOpen, Search, ArrowRight, Shuffle, Star, PenLine, Sparkles } from 'lucide-react'
 import { WRITING_PROMPTS, getDailyPrompt, PROMPT_CATEGORIES, getRandomPrompt } from '@/lib/prompts'
-import { EXAM_COLORS } from '@/lib/utils'
+import { EXAM_COLORS, LEVEL_COLORS } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { getDailyGeneratedPrompts } from '@/lib/queries'
 import type { PromptCategory, ExamType, WritingPrompt } from '@/types'
-
-const DIFFICULTY_COLORS = {
-  Beginner: 'bg-muted text-muted-foreground',
-  Intermediate: 'bg-primary/10 text-primary',
-  Advanced: 'bg-primary/20 text-primary font-semibold',
-} as const
 
 export default function PromptsPage() {
   const router = useRouter()
@@ -89,7 +83,7 @@ export default function PromptsPage() {
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-2">
               <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-muted text-muted-foreground">{dailyPrompt.category}</span>
-              <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${DIFFICULTY_COLORS[dailyPrompt.difficulty]}`}>{dailyPrompt.difficulty}</span>
+              <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${LEVEL_COLORS[dailyPrompt.difficulty]}`}>{dailyPrompt.difficulty}</span>
             </div>
             <button onClick={() => handleUsePrompt(dailyPrompt.text, dailyPrompt.examType[0])} className="flex items-center gap-2 px-5 py-2 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors text-sm">
               <PenLine size={14} />
@@ -143,7 +137,7 @@ export default function PromptsPage() {
           <motion.div key={prompt.id} className="bg-card border border-border rounded-lg p-5 hover:shadow-md transition-shadow flex flex-col" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.04, 0.4) }}>
             <div className="flex items-center gap-2 mb-3 flex-wrap">
               <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{prompt.category}</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${DIFFICULTY_COLORS[prompt.difficulty]}`}>{prompt.difficulty}</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${LEVEL_COLORS[prompt.difficulty]}`}>{prompt.difficulty}</span>
               {prompt.isDaily && (
                 <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/15 text-primary">
                   <Sparkles size={9} />

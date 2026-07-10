@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Trophy, Crown, Star, TrendingUp, Info, Shield } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { createClient } from '@/lib/supabase/client'
 import { getLeaderboard, getUserScores } from '@/lib/queries'
-import { getScoreColor } from '@/lib/utils'
+import { getScoreColor, getRelativeTime } from '@/lib/utils'
 import type { LeaderboardEntry, ExamType } from '@/types'
 
 const EXAM_TABS: Array<{ label: string; value: ExamType | undefined }> = [
@@ -24,42 +24,72 @@ export default function LeaderboardPage() {
   const [activeExam, setActiveExam] = useState<ExamType | undefined>(undefined)
   const [userAvgScore, setUserAvgScore] = useState<number | null>(null)
   const [userRank, setUserRank] = useState<number | null>(null)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
 
-  useEffect(() => {
-    let cancelled = false
+  const loadLeaderboard = useCallback(async (silent = false) => {
     const supabase = createClient()
+    if (!silent) setLoading(true)
 
-    ;(async () => {
-      setLoading(true)
-      const [lb, userScores] = await Promise.all([
-        getLeaderboard(supabase, activeExam, 20),
-        user ? getUserScores(supabase, user.id, { examType: activeExam, limit: 50 }) : Promise.resolve([]),
-      ])
-      if (cancelled) return
+    const [lb, userScores] = await Promise.all([
+      getLeaderboard(supabase, activeExam, 20),
+      user ? getUserScores(supabase, user.id, { examType: activeExam, limit: 50 }) : Promise.resolve([]),
+    ])
 
-      setEntries(lb)
+    setEntries(lb)
+    setLastUpdated(new Date())
 
-      if (userScores.length > 0) {
-        const avg = Math.round(userScores.reduce((s, e) => s + e.totalScore, 0) / userScores.length)
-        setUserAvgScore(avg)
-        const rank = lb.findIndex((e) => e.alias === user?.user_metadata?.leaderboard_alias) + 1
-        setUserRank(rank > 0 ? rank : null)
-      }
+    if (userScores.length > 0) {
+      const avg = Math.round(userScores.reduce((s, e) => s + e.totalScore, 0) / userScores.length)
+      setUserAvgScore(avg)
+      const rank = lb.findIndex((e) => e.alias === user?.user_metadata?.leaderboard_alias) + 1
+      setUserRank(rank > 0 ? rank : null)
+    }
 
-      setLoading(false)
-    })()
-
-    return () => { cancelled = true }
+    setLoading(false)
   }, [activeExam, user])
+
+  // Initial load + reload whenever the exam tab or signed-in user changes.
+  useEffect(() => {
+    ;(async () => {
+      await loadLeaderboard()
+    })()
+  }, [loadLeaderboard])
+
+  // Realtime: any insert/update/delete on `leaderboard` — from another
+  // student's score changing, or the periodic refresh cron — pushes an
+  // update to everyone viewing this page, no manual refresh needed.
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase
+      .channel('leaderboard-live')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'leaderboard' },
+        () => loadLeaderboard(true)
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [loadLeaderboard])
+
 
   return (
     <div className="max-w-3xl mx-auto">
-      <div className="page-header">
-        <h1 className="page-title flex items-center gap-2">
-          <Trophy size={28} className="text-primary" />
-          Leaderboard
-        </h1>
-        <p className="page-subtitle">Anonymous rankings based on average essay scores</p>
+      <div className="page-header flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="page-title flex items-center gap-2">
+            <Trophy size={28} className="text-primary" />
+            Leaderboard
+          </h1>
+          <p className="page-subtitle">Anonymous rankings based on average essay scores</p>
+        </div>
+        <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground pt-1">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[hsl(var(--score-excellent))] opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-[hsl(var(--score-excellent))]" />
+          </span>
+          Live{lastUpdated && ` · Updated ${getRelativeTime(lastUpdated)}`}
+        </div>
       </div>
 
       <div className="flex items-start gap-2 p-4 rounded-lg bg-muted/60 border border-border mb-6">

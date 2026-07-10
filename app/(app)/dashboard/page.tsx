@@ -8,7 +8,7 @@ import { useAuth } from '@/components/providers/AuthProvider'
 import { createClient } from '@/lib/supabase/client'
 import { getUserScores, getDailyGeneratedPrompts } from '@/lib/queries'
 import { getDailyPrompt } from '@/lib/prompts'
-import { getScoreColor, getScoreLabel, formatDateTime, EXAM_COLORS } from '@/lib/utils'
+import { getScoreColor, getScoreLabel, formatDateTime, EXAM_COLORS, LEVEL_COLORS } from '@/lib/utils'
 import type { EssayScore, WritingPrompt } from '@/types'
 
 export default function DashboardPage() {
@@ -93,7 +93,7 @@ export default function DashboardPage() {
             <p className="font-medium text-background max-w-xl leading-snug">{dailyPrompt.text}</p>
             <div className="flex items-center gap-2 mt-2">
               <span className="text-xs px-2 py-0.5 bg-background/15 text-background rounded-full">{dailyPrompt.category}</span>
-              <span className="text-xs px-2 py-0.5 bg-background/15 text-background rounded-full">{dailyPrompt.difficulty}</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${LEVEL_COLORS[dailyPrompt.difficulty]}`}>{dailyPrompt.difficulty}</span>
             </div>
           </div>
           <Link href={`/editor?prompt=${encodeURIComponent(dailyPrompt.text)}&examType=${dailyPrompt.examType[0] || 'General'}`} className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-colors text-sm flex-shrink-0">

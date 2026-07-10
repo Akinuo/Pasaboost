@@ -125,12 +125,14 @@ export interface DimensionProgress {
   trend: 'up' | 'down' | 'stable'
 }
 
+export type Difficulty = 'Beginner' | 'Intermediate' | 'Advanced'
+
 export interface WritingPrompt {
   id: string
   text: string
   category: PromptCategory
   examType: ExamType[]
-  difficulty: 'Beginner' | 'Intermediate' | 'Advanced'
+  difficulty: Difficulty
   keywords: string[]
   tip?: string
   isDaily?: boolean
