@@ -4,48 +4,61 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
+    /* Paper: warm off-white, like the inside cover of a blue book, not stock cream */
+    --background: 42 28% 96.5%;
+    --foreground: 222 38% 14%;
+    --card: 40 30% 98.5%;
+    --card-foreground: 222 38% 14%;
+    --popover: 40 30% 98.5%;
+    --popover-foreground: 222 38% 14%;
+    /* Primary: blue-book ink navy */
+    --primary: 222 44% 21%;
+    --primary-foreground: 42 30% 97%;
+    /* Secondary: manila folder tan */
+    --secondary: 38 38% 89%;
+    --secondary-foreground: 222 38% 14%;
+    --muted: 40 24% 92%;
+    --muted-foreground: 222 14% 40%;
+    --accent: 38 42% 87%;
+    --accent-foreground: 222 38% 14%;
+    /* Destructive doubles as "red pen" ink */
+    --destructive: 7 62% 42%;
+    --destructive-foreground: 42 30% 97%;
+    --border: 38 20% 84%;
+    --input: 38 20% 84%;
+    --ring: 222 44% 21%;
+    --radius: 0.45rem;
+
+    /* Fixed brand marks — do not swap with theme, this is the "red pen" itself */
+    --redpen: 7 62% 42%;
+    --redpen-foreground: 42 30% 97%;
+    --highlight: 40 68% 58%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --background: 222 32% 8%;
+    --foreground: 42 24% 93%;
+    --card: 222 30% 11%;
+    --card-foreground: 42 24% 93%;
+    --popover: 222 30% 11%;
+    --popover-foreground: 42 24% 93%;
+    --primary: 40 55% 64%;
+    --primary-foreground: 222 32% 10%;
+    --secondary: 222 22% 17%;
+    --secondary-foreground: 42 24% 93%;
+    --muted: 222 22% 15%;
+    --muted-foreground: 40 12% 64%;
+    --accent: 222 22% 19%;
+    --accent-foreground: 42 24% 93%;
+    --destructive: 7 58% 54%;
+    --destructive-foreground: 222 32% 8%;
+    --border: 222 20% 20%;
+    --input: 222 20% 20%;
+    --ring: 40 55% 64%;
+
+    --redpen: 7 65% 58%;
+    --redpen-foreground: 222 32% 8%;
+    --highlight: 40 70% 62%;
   }
 }
 
@@ -56,8 +69,9 @@
 }
 
 @layer components {
+  /* Retained for any lingering references; no longer used for headline treatment */
   .gradient-text {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400;
+    @apply text-redpen;
   }
   .essay-editor {
     @apply w-full min-h-[400px] p-4 rounded-lg border border-input bg-background text-foreground
@@ -66,11 +80,22 @@
            placeholder:text-muted-foreground;
   }
   .stat-card {
-    @apply rounded-xl p-5 bg-card border border-border shadow-sm hover:shadow-md transition-shadow;
+    @apply rounded-lg p-5 bg-card border border-border shadow-sm hover:shadow-md transition-shadow;
   }
   .page-header { @apply mb-8; }
   .page-title { @apply text-3xl font-display font-bold text-foreground; }
   .page-subtitle { @apply mt-1 text-muted-foreground; }
+
+  /* Red-pen annotation marks — the recurring structural motif */
+  .redpen-circle {
+    @apply relative inline-flex items-center justify-center text-redpen;
+  }
+  .annotation {
+    @apply font-hand text-redpen text-lg leading-none;
+  }
+  .paper-card {
+    @apply bg-card border border-border rounded-sm shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(0,0,0,0.15)];
+  }
 }
 
 .score-excellent { @apply text-green-600 dark:text-green-400; }

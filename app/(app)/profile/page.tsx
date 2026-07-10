@@ -112,7 +112,7 @@ export default function ProfilePage() {
             // eslint-disable-next-line @next/next/no-img-element
             <img src={user.user_metadata.avatar_url} alt={displayName} className="w-20 h-20 rounded-full border-2 border-border" />
           ) : (
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center border-2 border-border">
+            <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center border-2 border-border">
               <span className="text-white text-2xl font-bold">{displayName[0]?.toUpperCase() ?? 'U'}</span>
             </div>
           )}
@@ -124,7 +124,7 @@ export default function ProfilePage() {
           <h2 className="font-display font-bold text-xl text-foreground">{displayName}</h2>
           <p className="text-muted-foreground text-sm">{user?.email}</p>
           {isGoogleUser && (
-            <span className="mt-1 inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400">Signed in with Google</span>
+            <span className="mt-1 inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-secondary text-primary">Signed in with Google</span>
           )}
         </div>
       </motion.div>

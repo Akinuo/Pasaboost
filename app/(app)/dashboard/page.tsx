@@ -69,7 +69,7 @@ export default function DashboardPage() {
       <div className="page-header">
         <h1 className="page-title">
           Good {getGreeting()},{' '}
-          <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">{firstName}</span>
+          <span className="text-redpen">{firstName}</span>
         </h1>
         <p className="page-subtitle">
           {loading ? 'Loading your dashboard…' : recentScores.length === 0
@@ -78,12 +78,12 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      <motion.div className="mb-8 p-6 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-lg" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+      <motion.div className="mb-8 p-6 rounded-2xl bg-primary text-primary-foreground shadow-lg" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Lightbulb size={16} className="text-amber-300" />
-              <span className="text-xs font-medium text-blue-100 uppercase tracking-wider">Today&apos;s Prompt</span>
+              <span className="text-xs font-medium text-primary-foreground/70 uppercase tracking-wider">Today&apos;s Prompt</span>
               {aiPrompt && (
                 <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/20 text-white">
                   <Sparkles size={9} />
@@ -97,7 +97,7 @@ export default function DashboardPage() {
               <span className="text-xs px-2 py-0.5 bg-white/20 rounded-full">{dailyPrompt.difficulty}</span>
             </div>
           </div>
-          <Link href={`/editor?prompt=${encodeURIComponent(dailyPrompt.text)}&examType=${dailyPrompt.examType[0] || 'General'}`} className="flex items-center gap-2 px-5 py-2.5 bg-white text-blue-700 font-semibold rounded-xl hover:bg-blue-50 transition-colors text-sm flex-shrink-0">
+          <Link href={`/editor?prompt=${encodeURIComponent(dailyPrompt.text)}&examType=${dailyPrompt.examType[0] || 'General'}`} className="flex items-center gap-2 px-5 py-2.5 bg-background text-primary font-semibold rounded-xl hover:bg-secondary transition-colors text-sm flex-shrink-0">
             <PenLine size={16} />
             Write Essay
           </Link>

@@ -77,7 +77,7 @@ export default function PromptsPage() {
           <Star size={15} className="text-amber-500 fill-amber-500" />
           <span className="text-sm font-semibold text-amber-800 dark:text-amber-300">Today&apos;s Daily Prompt</span>
           {aiPrompts.length > 0 && (
-            <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300">
+            <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary text-primary">
               <Sparkles size={10} />
               AI Generated
             </span>
@@ -142,10 +142,10 @@ export default function PromptsPage() {
         {filtered.map((prompt, i) => (
           <motion.div key={prompt.id} className="bg-card border border-border rounded-xl p-5 hover:shadow-md transition-shadow flex flex-col" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.04, 0.4) }}>
             <div className="flex items-center gap-2 mb-3 flex-wrap">
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400">{prompt.category}</span>
+              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-secondary text-primary">{prompt.category}</span>
               <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${DIFFICULTY_COLORS[prompt.difficulty]}`}>{prompt.difficulty}</span>
               {prompt.isDaily && (
-                <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300">
+                <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary text-primary">
                   <Sparkles size={9} />
                   AI Generated
                 </span>

@@ -64,9 +64,9 @@ export default function LeaderboardPage() {
         <p className="page-subtitle">Anonymous rankings based on average essay scores</p>
       </div>
 
-      <div className="flex items-start gap-2 p-4 rounded-xl bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 mb-6">
-        <Shield size={15} className="text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-        <p className="text-sm text-blue-800 dark:text-blue-200">
+      <div className="flex items-start gap-2 p-4 rounded-xl bg-secondary border border-border mb-6">
+        <Shield size={15} className="text-primary flex-shrink-0 mt-0.5" />
+        <p className="text-sm text-foreground">
           The leaderboard is <strong>anonymous</strong>. Aliases are auto-generated. Enable leaderboard participation in your <strong>Profile settings</strong> to appear here.
         </p>
       </div>
@@ -137,7 +137,7 @@ export default function LeaderboardPage() {
                   {i < 3 ? <span className="text-lg">{RANK_BADGES[i]}</span> : <span className="text-sm font-mono font-bold text-muted-foreground">{entry.rank}</span>}
                 </div>
                 <div className="col-span-5 flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">{entry.alias[0].toUpperCase()}</div>
+                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold flex-shrink-0">{entry.alias[0].toUpperCase()}</div>
                   <div>
                     <p className="text-sm font-medium text-foreground">{entry.alias}</p>
                     {entry.badge && <p className="text-xs text-muted-foreground">{entry.badge}</p>}

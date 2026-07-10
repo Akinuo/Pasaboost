@@ -448,7 +448,7 @@ function EssayEditorInner() {
             <ChevronDown size={13} className={`transition-transform ${showPromptPanel ? 'rotate-180' : ''}`} />
           </button>
           <button onClick={handleGetOutline} className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-input bg-background hover:bg-accent text-muted-foreground hover:text-foreground transition-colors">
-            <Sparkles size={13} className="text-indigo-500" />
+            <Sparkles size={13} className="text-primary" />
             Outline Help
           </button>
         </div>
@@ -492,7 +492,7 @@ function EssayEditorInner() {
             <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400"><CheckCircle size={12} />No issues found</span>
           )}
           {grammarIssues.some((i) => i.replacement) && (
-            <button onClick={handleApplyAllGrammarFixes} className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline">
+            <button onClick={handleApplyAllGrammarFixes} className="text-xs font-medium text-redpen hover:underline">
               Apply all fixes
             </button>
           )}
@@ -529,7 +529,7 @@ function EssayEditorInner() {
             <motion.div className="bg-card border border-border rounded-2xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-y-auto" initial={{ scale: 0.96, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.96, opacity: 0 }} onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between px-5 py-4 border-b border-border sticky top-0 bg-card">
                 <h2 className="font-display font-bold text-foreground flex items-center gap-2">
-                  <Sparkles size={16} className="text-indigo-500" />
+                  <Sparkles size={16} className="text-primary" />
                   Outline Assistant
                 </h2>
                 <button onClick={() => setShowOutlinePanel(false)} className="p-1.5 rounded-lg hover:bg-accent transition-colors"><X size={16} /></button>
@@ -558,7 +558,7 @@ function EssayEditorInner() {
                         <ul className="space-y-1">
                           {s.points.map((pt, j) => (
                             <li key={j} className="flex items-start gap-2 text-sm text-muted-foreground">
-                              <span className="w-1 h-1 rounded-full bg-indigo-400 mt-2 flex-shrink-0" />{pt}
+                              <span className="w-1 h-1 rounded-full bg-primary mt-2 flex-shrink-0" />{pt}
                             </li>
                           ))}
                         </ul>
@@ -569,7 +569,7 @@ function EssayEditorInner() {
                         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">Transition Tips</p>
                         <div className="flex flex-wrap gap-2">
                           {outline.transitionTips.map((t, i) => (
-                            <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-indigo-100 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">{t}</span>
+                            <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-secondary text-primary border border-border">{t}</span>
                           ))}
                         </div>
                       </div>
@@ -658,14 +658,14 @@ function EssayEditorInner() {
         {isSubmitting && (
           <motion.div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <div className="bg-card border border-border rounded-2xl p-8 shadow-2xl text-center max-w-sm mx-4">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-4">
                 <Loader2 size={28} className="text-white animate-spin" />
               </div>
               <h2 className="font-display font-bold text-xl text-foreground mb-2">Analyzing your essay…</h2>
               <p className="text-muted-foreground text-sm">Our AI is evaluating your essay on all 5 dimensions. This usually takes 10–20 seconds.</p>
               <div className="mt-5 flex gap-1.5 justify-center">
                 {['Content', 'Organization', 'Grammar', 'Coherence', 'Argument'].map((dim, i) => (
-                  <motion.div key={dim} className="w-2 h-2 rounded-full bg-blue-500" animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }} title={dim} />
+                  <motion.div key={dim} className="w-2 h-2 rounded-full bg-primary" animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }} title={dim} />
                 ))}
               </div>
             </div>

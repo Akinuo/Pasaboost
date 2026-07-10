@@ -53,7 +53,7 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background bg-hero-pattern px-4">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-md">
         <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8 transition-colors">
           <ArrowLeft size={16} />
@@ -62,10 +62,12 @@ function LoginForm() {
 
         <motion.div className="bg-card border border-border rounded-2xl p-8 shadow-xl" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <div className="text-center mb-8">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center mx-auto mb-4 shadow-lg">
-              <span className="text-2xl font-display font-bold text-amber-400">P</span>
+            <div className="w-14 h-14 rounded-lg bg-primary flex items-center justify-center mx-auto mb-4 shadow-lg">
+              <svg width="26" height="26" viewBox="0 0 30 30" fill="none">
+                <path d="M15 5v20M8 6.5c2.5 -1 4.5 -1 7 0v19c-2.5 -1 -4.5 -1 -7 0z" stroke="hsl(var(--primary-foreground))" strokeWidth="1.3" fill="none" opacity="0.7" />
+              </svg>
             </div>
-            <h1 className="text-2xl font-display font-bold text-foreground">Welcome back</h1>
+            <h1 className="text-2xl font-display font-semibold text-foreground">Welcome back</h1>
             <p className="text-muted-foreground text-sm mt-1">Sign in to continue your practice</p>
           </div>
 
@@ -116,8 +118,8 @@ function LoginForm() {
               {errors.password && <p className="text-xs text-destructive mt-1">{errors.password.message}</p>}
             </div>
 
-            <button type="submit" disabled={isLoading || isGoogleLoading} className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2">
-              {isLoading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+            <button type="submit" disabled={isLoading || isGoogleLoading} className="w-full py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2">
+              {isLoading && <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />}
               Sign In
             </button>
           </form>

@@ -46,12 +46,13 @@ export default function AppSidebar({ children }: { children: React.ReactNode }) 
       {/* Desktop sidebar — untouched, lg and up only */}
       <aside className="hidden lg:flex lg:relative flex-col w-64 bg-card border-r border-border">
         <div className="flex items-center justify-between px-6 py-5 border-b border-border">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center shadow">
-              <span className="text-lg font-display font-bold text-amber-400">P</span>
-            </div>
+          <div className="flex items-center gap-2.5">
+            <svg width="28" height="28" viewBox="0 0 30 30" fill="none" className="flex-shrink-0">
+              <rect x="4" y="4" width="22" height="22" rx="2" fill="hsl(var(--primary))" />
+              <path d="M15 8v16M9 9.5c2 -0.8 4 -0.8 6 0v15c-2 -0.8 -4 -0.8 -6 0z" stroke="hsl(var(--primary-foreground))" strokeWidth="1.1" fill="none" opacity="0.55" />
+            </svg>
             <div>
-              <p className="font-display font-bold text-foreground leading-tight">PasaBoost</p>
+              <p className="font-display font-semibold text-foreground leading-tight">PasaBoost</p>
               <p className="text-xs text-muted-foreground">Essay Coach</p>
             </div>
           </div>
@@ -98,8 +99,8 @@ export default function AppSidebar({ children }: { children: React.ReactNode }) 
               onClick={() => setUserMenuOpen(!userMenuOpen)}
               className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors"
             >
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
-                <span className="text-white text-sm font-bold">{displayName[0]?.toUpperCase() ?? 'U'}</span>
+              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                <span className="text-primary-foreground text-sm font-bold">{displayName[0]?.toUpperCase() ?? 'U'}</span>
               </div>
               <div className="flex-1 text-left overflow-hidden">
                 <p className="text-sm font-medium text-foreground truncate">{displayName}</p>
@@ -150,8 +151,8 @@ export default function AppSidebar({ children }: { children: React.ReactNode }) 
             >
               <div className="flex items-center justify-between px-4 py-4 border-b border-border">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
-                    <span className="text-white text-sm font-bold">{displayName[0]?.toUpperCase() ?? 'U'}</span>
+                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                    <span className="text-primary-foreground text-sm font-bold">{displayName[0]?.toUpperCase() ?? 'U'}</span>
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{displayName}</p>
@@ -194,18 +195,19 @@ export default function AppSidebar({ children }: { children: React.ReactNode }) 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-border bg-card">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center">
-              <span className="text-sm font-display font-bold text-amber-400">P</span>
-            </div>
-            <span className="font-display font-bold text-foreground">PasaBoost</span>
+            <svg width="24" height="24" viewBox="0 0 30 30" fill="none" className="flex-shrink-0">
+              <rect x="4" y="4" width="22" height="22" rx="2" fill="hsl(var(--primary))" />
+              <path d="M15 8v16M9 9.5c2 -0.8 4 -0.8 6 0v15c-2 -0.8 -4 -0.8 -6 0z" stroke="hsl(var(--primary-foreground))" strokeWidth="1.1" fill="none" opacity="0.55" />
+            </svg>
+            <span className="font-display font-semibold text-foreground">PasaBoost</span>
           </div>
           <div className="flex items-center gap-1">
             <button onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')} className="p-2 rounded-md hover:bg-accent">
               <ThemeIcon size={18} />
             </button>
             <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-md hover:bg-accent">
-              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                <span className="text-white text-[11px] font-bold">{displayName[0]?.toUpperCase() ?? 'U'}</span>
+              <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                <span className="text-primary-foreground text-[11px] font-bold">{displayName[0]?.toUpperCase() ?? 'U'}</span>
               </div>
             </button>
           </div>

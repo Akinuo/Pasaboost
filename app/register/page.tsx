@@ -63,7 +63,7 @@ export default function RegisterPage() {
 
   if (signupComplete) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background bg-hero-pattern px-4">
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <motion.div
           className="max-w-md w-full bg-card border border-border rounded-2xl p-8 shadow-xl text-center"
           initial={{ opacity: 0, y: 20 }}
@@ -85,7 +85,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background bg-hero-pattern px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-4xl">
         <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8 transition-colors">
           <ArrowLeft size={16} />
@@ -95,10 +95,12 @@ export default function RegisterPage() {
         <div className="grid lg:grid-cols-2 gap-8 items-start">
           <motion.div className="bg-card border border-border rounded-2xl p-8 shadow-xl" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
             <div className="mb-7">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center mb-4">
-                <span className="text-xl font-display font-bold text-amber-400">P</span>
+              <div className="w-12 h-12 rounded-lg bg-primary flex items-center justify-center mb-4">
+                <svg width="22" height="22" viewBox="0 0 30 30" fill="none">
+                  <path d="M15 5v20M8 6.5c2.5 -1 4.5 -1 7 0v19c-2.5 -1 -4.5 -1 -7 0z" stroke="hsl(var(--primary-foreground))" strokeWidth="1.3" fill="none" opacity="0.7" />
+                </svg>
               </div>
-              <h1 className="text-2xl font-display font-bold text-foreground">Create your account</h1>
+              <h1 className="text-2xl font-display font-semibold text-foreground">Create your account</h1>
               <p className="text-muted-foreground text-sm mt-1">Start your exam prep journey today</p>
             </div>
 
@@ -169,8 +171,8 @@ export default function RegisterPage() {
               </div>
               {errors.agreeToTerms && <p className="text-xs text-destructive">{errors.agreeToTerms.message}</p>}
 
-              <button type="submit" disabled={isLoading || isGoogleLoading} className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2">
-                {isLoading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+              <button type="submit" disabled={isLoading || isGoogleLoading} className="w-full py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2">
+                {isLoading && <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />}
                 Create Account
               </button>
             </form>
@@ -182,16 +184,16 @@ export default function RegisterPage() {
           </motion.div>
 
           <motion.div className="lg:pt-8" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }}>
-            <div className="p-8 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white">
-              <h2 className="text-2xl font-display font-bold mb-2">Free, always.</h2>
-              <p className="text-blue-100 text-sm mb-6">
+            <div className="p-8 rounded-lg bg-primary text-primary-foreground">
+              <h2 className="text-2xl font-display font-semibold mb-2">Free, always.</h2>
+              <p className="text-primary-foreground/70 text-sm mb-6">
                 PasaBoost is built for public high school students preparing for college. No paywalls, no subscriptions.
               </p>
               <div className="space-y-3">
                 {PERKS.map((perk) => (
                   <div key={perk} className="flex items-start gap-3">
-                    <CheckCircle size={17} className="text-amber-300 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm text-white">{perk}</span>
+                    <CheckCircle size={17} className="text-redpen flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-primary-foreground/90">{perk}</span>
                   </div>
                 ))}
               </div>

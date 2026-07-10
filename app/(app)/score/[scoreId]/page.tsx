@@ -52,7 +52,7 @@ export default function ScoreResultPage({ params }: { params: Promise<{ scoreId:
       </Link>
 
       <motion.div className="rounded-2xl overflow-hidden border border-border shadow-sm mb-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="bg-gradient-to-r from-slate-900 to-blue-950 dark:from-slate-950 dark:to-blue-950 px-6 py-6 text-white">
+        <div className="bg-primary px-6 py-6 text-white">
           <div className="flex items-start justify-between flex-wrap gap-4">
             <div>
               <div className="flex items-center gap-2 mb-2">
@@ -221,9 +221,9 @@ export default function ScoreResultPage({ params }: { params: Promise<{ scoreId:
 
         {activeTab === 'rewrites' && (
           <motion.div className="space-y-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <div className="flex items-center gap-2 p-4 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
-              <ArrowUpDown size={16} className="text-blue-600 dark:text-blue-400 flex-shrink-0" />
-              <p className="text-sm text-blue-800 dark:text-blue-200">
+            <div className="flex items-center gap-2 p-4 rounded-xl bg-secondary border border-border">
+              <ArrowUpDown size={16} className="text-primary flex-shrink-0" />
+              <p className="text-sm text-foreground">
                 Compare your original paragraphs with AI-improved rewrites. Each rewrite explains exactly what was changed and why.
               </p>
             </div>
@@ -254,7 +254,7 @@ export default function ScoreResultPage({ params }: { params: Promise<{ scoreId:
                   {pr.improvements.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {pr.improvements.map((imp, j) => (
-                        <span key={j} className="text-xs px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">{imp}</span>
+                        <span key={j} className="text-xs px-2.5 py-1 rounded-full bg-secondary text-primary border border-border">{imp}</span>
                       ))}
                     </div>
                   )}
@@ -385,7 +385,7 @@ export default function ScoreResultPage({ params }: { params: Promise<{ scoreId:
             Share
           </button>
         </div>
-        <Link href="/editor" className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:opacity-90 transition-opacity text-sm">
+        <Link href="/editor" className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground font-semibold rounded-xl hover:opacity-90 transition-opacity text-sm">
           <PenLine size={15} />
           Write Another Essay
         </Link>
