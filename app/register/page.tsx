@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { motion } from 'framer-motion'
 import { Mail, Lock, User, Eye, EyeOff, Chrome, ArrowLeft, AlertCircle, CheckCircle } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
+import LogoMark from '@/components/ui/LogoMark'
 import type { RegisterFormValues } from '@/types'
 
 const registerSchema = z
@@ -63,21 +64,22 @@ export default function RegisterPage() {
 
   if (signupComplete) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background bg-hero-pattern px-4">
+      <div className="min-h-screen flex items-center justify-center bg-background relative px-4">
+        <div className="absolute inset-0 bg-rule-pattern bg-rule opacity-50 [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)]" />
         <motion.div
-          className="max-w-md w-full bg-card border border-border rounded-2xl p-8 shadow-xl text-center"
+          className="max-w-md w-full bg-card border border-border rounded-lg p-8 shadow-sm text-center relative"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <div className="w-14 h-14 rounded-full bg-green-100 dark:bg-green-950/40 flex items-center justify-center mx-auto mb-4">
-            <CheckCircle size={28} className="text-green-600 dark:text-green-400" />
+          <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <CheckCircle size={28} className="text-primary" />
           </div>
-          <h1 className="text-xl font-display font-bold text-foreground mb-2">Check your email</h1>
+          <h1 className="text-xl font-display font-semibold text-foreground mb-2">Check your email</h1>
           <p className="text-muted-foreground text-sm mb-6">
             We sent a confirmation link to your email address. Click it to activate your account, then sign in.
           </p>
-          <Link href="/login" className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
-            Go to Sign In
+          <Link href="/login" className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
+            Go to sign in
           </Link>
         </motion.div>
       </div>
@@ -85,20 +87,21 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background bg-hero-pattern px-4 py-12">
-      <div className="w-full max-w-4xl">
+    <div className="min-h-screen flex items-center justify-center bg-background relative px-4 py-12">
+      <div className="absolute inset-0 bg-rule-pattern bg-rule opacity-50 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
+      <div className="w-full max-w-4xl relative">
         <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8 transition-colors">
           <ArrowLeft size={16} />
           Back to home
         </Link>
 
         <div className="grid lg:grid-cols-2 gap-8 items-start">
-          <motion.div className="bg-card border border-border rounded-2xl p-8 shadow-xl" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+          <motion.div className="bg-card border border-border rounded-lg p-8 shadow-sm" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
             <div className="mb-7">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center mb-4">
-                <span className="text-xl font-display font-bold text-amber-400">P</span>
+              <div className="mb-4">
+                <LogoMark size={44} />
               </div>
-              <h1 className="text-2xl font-display font-bold text-foreground">Create your account</h1>
+              <h1 className="text-2xl font-display font-semibold text-foreground">Create your account</h1>
               <p className="text-muted-foreground text-sm mt-1">Start your exam prep journey today</p>
             </div>
 
@@ -169,9 +172,9 @@ export default function RegisterPage() {
               </div>
               {errors.agreeToTerms && <p className="text-xs text-destructive">{errors.agreeToTerms.message}</p>}
 
-              <button type="submit" disabled={isLoading || isGoogleLoading} className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2">
-                {isLoading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-                Create Account
+              <button type="submit" disabled={isLoading || isGoogleLoading} className="w-full py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                {isLoading && <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />}
+                Create account
               </button>
             </form>
 
@@ -182,21 +185,21 @@ export default function RegisterPage() {
           </motion.div>
 
           <motion.div className="lg:pt-8" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }}>
-            <div className="p-8 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white">
-              <h2 className="text-2xl font-display font-bold mb-2">Free, always.</h2>
-              <p className="text-blue-100 text-sm mb-6">
+            <div className="p-8 rounded-lg bg-foreground text-background">
+              <h2 className="text-2xl font-display font-semibold mb-2">Free, always.</h2>
+              <p className="text-background/70 text-sm mb-6">
                 PasaBoost is built for public high school students preparing for college. No paywalls, no subscriptions.
               </p>
               <div className="space-y-3">
                 {PERKS.map((perk) => (
                   <div key={perk} className="flex items-start gap-3">
-                    <CheckCircle size={17} className="text-amber-300 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm text-white">{perk}</span>
+                    <CheckCircle size={17} className="text-primary flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-background/90">{perk}</span>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="mt-4 p-5 rounded-xl border border-border bg-card">
+            <div className="mt-4 p-5 rounded-lg border border-border bg-card">
               <p className="text-sm text-muted-foreground leading-relaxed">
                 <strong className="text-foreground">Research note:</strong> PasaBoost is part of a thesis
                 measuring 8-week essay improvement. Your anonymized scores may be used as research data with your consent.

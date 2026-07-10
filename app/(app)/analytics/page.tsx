@@ -77,7 +77,7 @@ export default function AnalyticsPage() {
         {[
           { label: 'Total Essays', value: scoreHistory.length.toString(), sub: 'submissions' },
           { label: 'Average Score', value: `${avgScore}/100`, sub: getScoreLabel(avgScore) },
-          { label: 'Overall Progress', value: `${improvement > 0 ? '+' : ''}${improvement}`, sub: improvement > 0 ? 'points gained' : improvement < 0 ? 'points lost' : 'stable', color: improvement > 0 ? 'text-green-600' : improvement < 0 ? 'text-red-500' : 'text-muted-foreground' },
+          { label: 'Overall Progress', value: `${improvement > 0 ? '+' : ''}${improvement}`, sub: improvement > 0 ? 'points gained' : improvement < 0 ? 'points lost' : 'stable', color: improvement > 0 ? 'score-good' : improvement < 0 ? 'score-poor' : 'text-muted-foreground' },
           { label: 'Best Score', value: `${Math.max(...scoreHistory.map((s) => s.totalScore))}/100`, sub: 'personal best' },
         ].map((stat, i) => (
           <motion.div key={stat.label} className="stat-card" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>
@@ -104,24 +104,24 @@ export default function AnalyticsPage() {
               <AreaChart data={scoreHistory}>
                 <defs>
                   <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
+                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.18} />
+                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                 <XAxis dataKey="date" tick={{ fontSize: 11 }} />
                 <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
                 <Tooltip formatter={(val: number) => [`${val}/100`, 'Total Score']} contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }} />
-                <Area type="monotone" dataKey="totalScore" stroke="#3B82F6" strokeWidth={2.5} fill="url(#scoreGrad)" dot={{ fill: '#3B82F6', r: 4 }} activeDot={{ r: 6 }} />
+                <Area type="monotone" dataKey="totalScore" stroke="hsl(var(--primary))" strokeWidth={2.5} fill="url(#scoreGrad)" dot={{ fill: 'hsl(var(--primary))', r: 4 }} activeDot={{ r: 6 }} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
 
           <div className="grid grid-cols-3 gap-3">
             {[
-              { label: 'Excellent', threshold: 90, color: 'bg-green-500' },
-              { label: 'Proficient', threshold: 75, color: 'bg-blue-500' },
-              { label: 'Your Average', threshold: avgScore, color: 'bg-indigo-500' },
+              { label: 'Excellent', threshold: 90, color: 'bg-[hsl(var(--score-excellent))]' },
+              { label: 'Proficient', threshold: 75, color: 'bg-[hsl(var(--score-good))]' },
+              { label: 'Your Average', threshold: avgScore, color: 'bg-primary' },
             ].map((b) => (
               <div key={b.label} className="p-4 rounded-xl border border-border bg-card text-center">
                 <div className={`w-3 h-3 rounded-full ${b.color} mx-auto mb-2`} />
@@ -160,11 +160,11 @@ export default function AnalyticsPage() {
                       <span className="text-lg">{dp.dimension.charAt(0)}</span>
                       <span className="font-medium text-foreground text-sm">{dp.dimension}</span>
                     </div>
-                    {dp.trend === 'up' ? <TrendingUp size={16} className="text-green-500" /> : dp.trend === 'down' ? <TrendingDown size={16} className="text-red-500" /> : <Minus size={16} className="text-muted-foreground" />}
+                    {dp.trend === 'up' ? <TrendingUp size={16} className="score-good" /> : dp.trend === 'down' ? <TrendingDown size={16} className="score-poor" /> : <Minus size={16} className="text-muted-foreground" />}
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">{dp.firstScore} → <strong className="text-foreground">{dp.latestScore}</strong>/20</span>
-                    <span className={`font-bold ${dp.improvement > 0 ? 'text-green-500' : dp.improvement < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>{dp.improvement > 0 ? '+' : ''}{dp.improvement}</span>
+                    <span className={`font-semibold ${dp.improvement > 0 ? 'score-good' : dp.improvement < 0 ? 'score-poor' : 'text-muted-foreground'}`}>{dp.improvement > 0 ? '+' : ''}{dp.improvement}</span>
                   </div>
                 </div>
               ))}
@@ -189,7 +189,7 @@ export default function AnalyticsPage() {
                 <XAxis dataKey="range" tick={{ fontSize: 11 }} />
                 <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
                 <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }} />
-                <Bar dataKey="count" fill="#3B82F6" radius={[4, 4, 0, 0]} name="Essays" />
+                <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Essays" />
               </BarChart>
             </ResponsiveContainer>
           </div>

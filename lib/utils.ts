@@ -19,17 +19,17 @@ export function getScoreBand(score: number): ScoreBand {
 }
 
 export function getScoreColor(score: number): string {
-  if (score >= 85) return 'text-green-600 dark:text-green-400'
-  if (score >= 70) return 'text-blue-600 dark:text-blue-400'
-  if (score >= 55) return 'text-yellow-600 dark:text-yellow-400'
-  return 'text-red-600 dark:text-red-400'
+  if (score >= 85) return 'score-excellent'
+  if (score >= 70) return 'score-good'
+  if (score >= 55) return 'score-average'
+  return 'score-poor'
 }
 
 export function getScoreBgColor(score: number): string {
-  if (score >= 85) return 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800'
-  if (score >= 70) return 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800'
-  if (score >= 55) return 'bg-yellow-50 dark:bg-yellow-950/30 border-yellow-200 dark:border-yellow-800'
-  return 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800'
+  if (score >= 85) return 'score-band-excellent'
+  if (score >= 70) return 'score-band-good'
+  if (score >= 55) return 'score-band-average'
+  return 'score-band-poor'
 }
 
 export function getScoreLabel(score: number): string {
@@ -59,24 +59,13 @@ export function getAIPenalty(likelihood: number | null | undefined): number {
 
 export function getDimensionColor(dimension: ScoreDimension): string {
   const colors: Record<ScoreDimension, string> = {
-    Content: '#1E40AF',
-    Organization: '#059669',
-    Grammar: '#7C3AED',
-    Coherence: '#D97706',
-    Argument: '#DC2626',
+    Content: 'hsl(var(--chart-1))',
+    Organization: 'hsl(var(--chart-2))',
+    Grammar: 'hsl(var(--chart-3))',
+    Coherence: 'hsl(var(--chart-4))',
+    Argument: 'hsl(var(--chart-5))',
   }
   return colors[dimension]
-}
-
-export function getDimensionIcon(dimension: ScoreDimension): string {
-  const icons: Record<ScoreDimension, string> = {
-    Content: '📝',
-    Organization: '📊',
-    Grammar: '✏️',
-    Coherence: '🔗',
-    Argument: '💡',
-  }
-  return icons[dimension]
 }
 
 // ============================================================
@@ -141,11 +130,11 @@ export const EXAM_DESCRIPTIONS: Record<string, string> = {
 }
 
 export const EXAM_COLORS: Record<string, string> = {
-  UPCAT: 'bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400',
-  ACET: 'bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400',
-  DCAT: 'bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400',
-  USTET: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400',
-  General: 'bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-400',
+  UPCAT: 'bg-[hsl(var(--chart-1)/0.12)] text-[hsl(var(--chart-1))]',
+  ACET: 'bg-[hsl(var(--chart-2)/0.12)] text-[hsl(var(--chart-2))]',
+  DCAT: 'bg-[hsl(var(--chart-3)/0.12)] text-[hsl(var(--chart-3))]',
+  USTET: 'bg-[hsl(var(--chart-4)/0.14)] text-[hsl(var(--chart-4))]',
+  General: 'bg-[hsl(var(--chart-5)/0.14)] text-[hsl(var(--chart-5))]',
 }
 
 // ============================================================

@@ -68,8 +68,7 @@ export default function DashboardPage() {
     <div>
       <div className="page-header">
         <h1 className="page-title">
-          Good {getGreeting()},{' '}
-          <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">{firstName}</span>
+          Good {getGreeting()}, {firstName}
         </h1>
         <p className="page-subtitle">
           {loading ? 'Loading your dashboard…' : recentScores.length === 0
@@ -78,26 +77,26 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      <motion.div className="mb-8 p-6 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-lg" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+      <motion.div className="mb-8 p-6 rounded-lg bg-foreground text-background" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <Lightbulb size={16} className="text-amber-300" />
-              <span className="text-xs font-medium text-blue-100 uppercase tracking-wider">Today&apos;s Prompt</span>
+              <Lightbulb size={16} className="text-primary" />
+              <span className="text-xs font-medium text-background/60 uppercase tracking-wider">Today&apos;s Prompt</span>
               {aiPrompt && (
-                <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/20 text-white">
+                <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-background/15 text-background">
                   <Sparkles size={9} />
                   AI Generated
                 </span>
               )}
             </div>
-            <p className="font-medium text-white max-w-xl leading-snug">{dailyPrompt.text}</p>
+            <p className="font-medium text-background max-w-xl leading-snug">{dailyPrompt.text}</p>
             <div className="flex items-center gap-2 mt-2">
-              <span className="text-xs px-2 py-0.5 bg-white/20 rounded-full">{dailyPrompt.category}</span>
-              <span className="text-xs px-2 py-0.5 bg-white/20 rounded-full">{dailyPrompt.difficulty}</span>
+              <span className="text-xs px-2 py-0.5 bg-background/15 text-background rounded-full">{dailyPrompt.category}</span>
+              <span className="text-xs px-2 py-0.5 bg-background/15 text-background rounded-full">{dailyPrompt.difficulty}</span>
             </div>
           </div>
-          <Link href={`/editor?prompt=${encodeURIComponent(dailyPrompt.text)}&examType=${dailyPrompt.examType[0] || 'General'}`} className="flex items-center gap-2 px-5 py-2.5 bg-white text-blue-700 font-semibold rounded-xl hover:bg-blue-50 transition-colors text-sm flex-shrink-0">
+          <Link href={`/editor?prompt=${encodeURIComponent(dailyPrompt.text)}&examType=${dailyPrompt.examType[0] || 'General'}`} className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-colors text-sm flex-shrink-0">
             <PenLine size={16} />
             Write Essay
           </Link>
@@ -106,18 +105,16 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          { icon: BarChart3, label: 'Average Score', value: recentScores.length ? `${avgScore}/100` : '—', sub: recentScores.length ? getScoreLabel(avgScore) : 'No essays yet', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/30' },
-          { icon: Star, label: 'Best Score', value: recentScores.length ? `${bestScore}/100` : '—', sub: recentScores.length ? getScoreLabel(bestScore) : 'Submit an essay', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-950/30' },
-          { icon: TrendingUp, label: 'Recent Trend', value: trend !== null ? `${trend > 0 ? '+' : ''}${trend}` : '—', sub: trend !== null ? (trend > 0 ? 'Improving!' : trend < 0 ? 'Needs review' : 'Holding steady') : 'Need 2 essays', color: trend !== null && trend > 0 ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground', bg: 'bg-green-50 dark:bg-green-950/30' },
-          { icon: Target, label: 'Essays Written', value: recentScores.length.toString(), sub: 'Total submissions', color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-950/30' },
+          { icon: BarChart3, label: 'Average Score', value: recentScores.length ? `${avgScore}/100` : '—', sub: recentScores.length ? getScoreLabel(avgScore) : 'No essays yet', subColor: 'text-muted-foreground' },
+          { icon: Star, label: 'Best Score', value: recentScores.length ? `${bestScore}/100` : '—', sub: recentScores.length ? getScoreLabel(bestScore) : 'Submit an essay', subColor: 'text-muted-foreground' },
+          { icon: TrendingUp, label: 'Recent Trend', value: trend !== null ? `${trend > 0 ? '+' : ''}${trend}` : '—', sub: trend !== null ? (trend > 0 ? 'Improving!' : trend < 0 ? 'Needs review' : 'Holding steady') : 'Need 2 essays', subColor: trend !== null && trend > 0 ? 'score-good' : trend !== null && trend < 0 ? 'score-poor' : 'text-muted-foreground' },
+          { icon: Target, label: 'Essays Written', value: recentScores.length.toString(), sub: 'Total submissions', subColor: 'text-muted-foreground' },
         ].map((stat, i) => (
           <motion.div key={stat.label} className="stat-card" custom={i} variants={cardVariants} initial="hidden" animate="visible">
-            <div className={`w-10 h-10 rounded-xl ${stat.bg} flex items-center justify-center mb-3`}>
-              <stat.icon size={18} className={stat.color} />
-            </div>
-            <div className="text-2xl font-display font-bold text-foreground">{stat.value}</div>
+            <stat.icon size={18} className="text-primary mb-3" strokeWidth={1.75} />
+            <div className="text-2xl font-display font-semibold text-foreground">{stat.value}</div>
             <div className="text-xs text-muted-foreground">{stat.label}</div>
-            <div className={`text-xs font-medium mt-0.5 ${stat.color}`}>{stat.sub}</div>
+            <div className={`text-xs font-medium mt-0.5 ${stat.subColor}`}>{stat.sub}</div>
           </motion.div>
         ))}
       </div>
@@ -136,7 +133,7 @@ export default function DashboardPage() {
               <PenLine size={32} className="mx-auto text-muted-foreground/50 mb-3" />
               <p className="font-medium text-foreground mb-1">No essays yet</p>
               <p className="text-sm text-muted-foreground mb-4">Write and submit your first essay to get AI feedback.</p>
-              <Link href="/editor" className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
+              <Link href="/editor" className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
                 <PenLine size={15} />
                 Write First Essay
               </Link>
@@ -181,14 +178,14 @@ export default function DashboardPage() {
             <h2 className="font-display font-bold text-lg text-foreground mb-4">Quick Actions</h2>
             <div className="space-y-2">
               {[
-                { href: '/editor', icon: PenLine, label: 'New Essay', sub: 'Write and get scored', color: 'text-blue-600' },
-                { href: '/prompts', icon: BookOpen, label: 'Browse Prompts', sub: '20+ exam prompts', color: 'text-purple-600' },
-                { href: '/analytics', icon: BarChart3, label: 'View Analytics', sub: 'Track your progress', color: 'text-green-600' },
-                { href: '/leaderboard', icon: Target, label: 'Leaderboard', sub: 'See how you rank', color: 'text-amber-600' },
+                { href: '/editor', icon: PenLine, label: 'New Essay', sub: 'Write and get scored' },
+                { href: '/prompts', icon: BookOpen, label: 'Browse Prompts', sub: '20+ exam prompts' },
+                { href: '/analytics', icon: BarChart3, label: 'View Analytics', sub: 'Track your progress' },
+                { href: '/leaderboard', icon: Target, label: 'Leaderboard', sub: 'See how you rank' },
               ].map((action) => (
-                <Link key={action.href} href={action.href} className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:shadow-sm transition-shadow">
+                <Link key={action.href} href={action.href} className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card hover:border-foreground/20 transition-colors">
                   <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                    <action.icon size={17} className={action.color} />
+                    <action.icon size={17} className="text-primary" strokeWidth={1.75} />
                   </div>
                   <div>
                     <p className="text-sm font-medium text-foreground leading-tight">{action.label}</p>

@@ -4,48 +4,73 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
+    /* warm paper + ink, terracotta accent — no default shadcn blue */
+    --background: 32 25% 97%;
+    --foreground: 20 20% 12%;
+    --card: 30 30% 99%;
+    --card-foreground: 20 20% 12%;
+    --popover: 30 30% 99%;
+    --popover-foreground: 20 20% 12%;
+    --primary: 16 72% 42%;
+    --primary-foreground: 30 40% 98%;
+    --secondary: 30 15% 93%;
+    --secondary-foreground: 20 20% 15%;
+    --muted: 30 15% 94%;
+    --muted-foreground: 20 10% 42%;
+    --accent: 30 20% 91%;
+    --accent-foreground: 20 20% 15%;
+    --destructive: 6 65% 42%;
+    --destructive-foreground: 30 40% 98%;
+    --border: 30 15% 87%;
+    --input: 30 15% 87%;
+    --ring: 16 72% 42%;
+    --radius: 0.625rem;
+
+    /* semantic score-band scale — muted, single-family, not candy-bright */
+    --score-excellent: 148 32% 32%;
+    --score-good: 16 72% 42%;
+    --score-average: 38 55% 42%;
+    --score-poor: 6 55% 42%;
+
+    /* curated 5-step data palette for charts/rubric dimensions — desaturated, cohesive */
+    --chart-1: 16 72% 42%;
+    --chart-2: 172 28% 30%;
+    --chart-3: 38 48% 45%;
+    --chart-4: 265 18% 42%;
+    --chart-5: 20 12% 45%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --background: 20 16% 9%;
+    --foreground: 30 20% 94%;
+    --card: 20 14% 12%;
+    --card-foreground: 30 20% 94%;
+    --popover: 20 14% 12%;
+    --popover-foreground: 30 20% 94%;
+    --primary: 16 75% 55%;
+    --primary-foreground: 20 25% 10%;
+    --secondary: 20 12% 18%;
+    --secondary-foreground: 30 15% 92%;
+    --muted: 20 12% 16%;
+    --muted-foreground: 30 10% 65%;
+    --accent: 20 12% 19%;
+    --accent-foreground: 30 15% 92%;
+    --destructive: 6 60% 48%;
+    --destructive-foreground: 30 20% 96%;
+    --border: 20 12% 20%;
+    --input: 20 12% 20%;
+    --ring: 16 75% 55%;
+
+    --score-excellent: 148 26% 52%;
+    --score-good: 16 75% 58%;
+    --score-average: 38 60% 58%;
+    --score-poor: 6 60% 58%;
+
+    --chart-1: 16 75% 58%;
+    --chart-2: 172 24% 48%;
+    --chart-3: 38 55% 60%;
+    --chart-4: 265 22% 62%;
+    --chart-5: 20 10% 62%;
   }
 }
 
@@ -56,8 +81,9 @@
 }
 
 @layer components {
-  .gradient-text {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400;
+  /* Solid ink/terracotta wordmark treatment — replaces the blue-to-indigo gradient text */
+  .brand-mark {
+    @apply font-display font-semibold tracking-tight text-foreground;
   }
   .essay-editor {
     @apply w-full min-h-[400px] p-4 rounded-lg border border-input bg-background text-foreground
@@ -65,18 +91,34 @@
            focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent
            placeholder:text-muted-foreground;
   }
+  /* Left-accent stripe card — the recurring motif in place of colored-tile icons */
   .stat-card {
-    @apply rounded-xl p-5 bg-card border border-border shadow-sm hover:shadow-md transition-shadow;
+    @apply relative rounded-lg pl-6 pr-5 py-5 bg-card border border-border overflow-hidden
+           transition-colors hover:border-foreground/20;
+  }
+  .stat-card::before {
+    content: '';
+    @apply absolute left-0 top-0 bottom-0 w-[3px] bg-primary/70;
   }
   .page-header { @apply mb-8; }
-  .page-title { @apply text-3xl font-display font-bold text-foreground; }
-  .page-subtitle { @apply mt-1 text-muted-foreground; }
+  .page-title { @apply text-3xl font-display font-semibold text-foreground tracking-tight; }
+  .page-subtitle { @apply mt-1.5 text-muted-foreground; }
+
+  /* Small caps eyebrow label — editorial detail used above section headings */
+  .eyebrow {
+    @apply text-xs font-semibold tracking-[0.14em] uppercase text-primary;
+  }
 }
 
-.score-excellent { @apply text-green-600 dark:text-green-400; }
-.score-good { @apply text-blue-600 dark:text-blue-400; }
-.score-average { @apply text-yellow-600 dark:text-yellow-400; }
-.score-poor { @apply text-red-600 dark:text-red-400; }
+.score-excellent { color: hsl(var(--score-excellent)); }
+.score-good { color: hsl(var(--score-good)); }
+.score-average { color: hsl(var(--score-average)); }
+.score-poor { color: hsl(var(--score-poor)); }
+
+.score-band-excellent { background-color: hsl(var(--score-excellent) / 0.08); border-color: hsl(var(--score-excellent) / 0.3); }
+.score-band-good { background-color: hsl(var(--score-good) / 0.08); border-color: hsl(var(--score-good) / 0.3); }
+.score-band-average { background-color: hsl(var(--score-average) / 0.08); border-color: hsl(var(--score-average) / 0.3); }
+.score-band-poor { background-color: hsl(var(--score-poor) / 0.08); border-color: hsl(var(--score-poor) / 0.3); }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { @apply bg-transparent; }

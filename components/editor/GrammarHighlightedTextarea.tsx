@@ -104,7 +104,7 @@ export default function GrammarHighlightedTextarea({
       <mark
         key={`m-${i}`}
         onClick={(e) => handleMarkClick(e, r.issue)}
-        className="bg-amber-200/70 dark:bg-amber-900/50 text-amber-950 dark:text-amber-100 rounded px-0.5 cursor-pointer pointer-events-auto border-b-2 border-amber-500 dark:border-amber-600 hover:bg-amber-300/70 dark:hover:bg-amber-800/60 transition-colors"
+        className="bg-primary/20 text-foreground rounded px-0.5 cursor-pointer pointer-events-auto border-b-2 border-primary/60 hover:bg-primary/30 transition-colors"
       >
         {value.slice(r.start, r.end)}
       </mark>
@@ -137,12 +137,12 @@ export default function GrammarHighlightedTextarea({
 
       {popover && (
         <div
-          className="absolute z-30 bg-card border border-border rounded-xl shadow-xl p-3.5"
+          className="absolute z-30 bg-card border border-border rounded-lg shadow-lg p-3.5"
           style={{ top: popover.top, left: Math.max(popover.left, 0), width: popover.width }}
         >
           <div className="flex items-center gap-1.5 mb-1.5">
-            <AlertCircle size={13} className="text-amber-500 flex-shrink-0" />
-            <span className="text-[10px] uppercase tracking-wide font-semibold text-amber-600 dark:text-amber-400">
+            <AlertCircle size={13} className="text-primary flex-shrink-0" />
+            <span className="text-[10px] uppercase tracking-wide font-semibold text-primary">
               {TYPE_LABEL[popover.issue.type]}
             </span>
           </div>
@@ -151,15 +151,15 @@ export default function GrammarHighlightedTextarea({
             <p className="text-xs text-muted-foreground mb-3">{popover.issue.suggestion}</p>
           )}
           {popover.issue.replacement && (
-            <div className="mb-3 px-2.5 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
-              <p className="text-xs text-emerald-800 dark:text-emerald-300 font-medium">&ldquo;{popover.issue.replacement}&rdquo;</p>
+            <div className="mb-3 px-2.5 py-1.5 rounded-lg bg-primary/5 border border-primary/20">
+              <p className="text-xs text-foreground font-medium">&ldquo;{popover.issue.replacement}&rdquo;</p>
             </div>
           )}
           <div className="flex items-center gap-2">
             {popover.issue.replacement ? (
               <button
                 onClick={() => { onApplyFix(popover.issue); setPopover(null) }}
-                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
               >
                 <Check size={12} />
                 Apply Fix

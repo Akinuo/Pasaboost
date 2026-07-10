@@ -397,7 +397,7 @@ function EssayEditorInner() {
         <div className="flex items-center gap-2 flex-wrap justify-end w-full sm:w-auto">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground px-2">
             {saveStatus === 'saving' && <Loader2 size={12} className="animate-spin" />}
-            {saveStatus === 'saved' && <CheckCircle size={12} className="text-green-500" />}
+            {saveStatus === 'saved' && <CheckCircle size={12} className="score-good" />}
             {saveStatus === 'error' && <AlertCircle size={12} className="text-destructive" />}
             {saveStatus === 'saving' && 'Saving…'}
             {saveStatus === 'saved' && 'Saved'}
@@ -420,7 +420,7 @@ function EssayEditorInner() {
             <span className="hidden sm:inline">Check Grammar</span>
             <span className="sm:hidden">Grammar</span>
             {grammarIssues.length > 0 && (
-              <span className="ml-0.5 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-amber-500 text-white">{grammarIssues.length}</span>
+              <span className="ml-0.5 px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-primary text-primary-foreground">{grammarIssues.length}</span>
             )}
           </button>
 
@@ -430,7 +430,7 @@ function EssayEditorInner() {
             </button>
           )}
 
-          <button onClick={handleSubmit} disabled={isSubmitting || wordCount < MIN_WORDS} className="flex items-center gap-2 px-5 py-2 text-sm font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50">
+          <button onClick={handleSubmit} disabled={isSubmitting || wordCount < MIN_WORDS} className="flex items-center gap-2 px-5 py-2 text-sm font-semibold bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50">
             {isSubmitting ? (<><Loader2 size={14} className="animate-spin" />Scoring…</>) : (<><Send size={14} />Get Score</>)}
           </button>
         </div>
@@ -443,12 +443,12 @@ function EssayEditorInner() {
       <div className="mb-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <button onClick={() => setShowPromptPanel(!showPromptPanel)} className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-            <Lightbulb size={15} className="text-amber-500" />
+            <Lightbulb size={15} className="text-primary" />
             {prompt ? 'Essay Prompt' : 'Add a writing prompt (optional)'}
             <ChevronDown size={13} className={`transition-transform ${showPromptPanel ? 'rotate-180' : ''}`} />
           </button>
           <button onClick={handleGetOutline} className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-input bg-background hover:bg-accent text-muted-foreground hover:text-foreground transition-colors">
-            <Sparkles size={13} className="text-indigo-500" />
+            <Sparkles size={13} className="text-primary" />
             Outline Help
           </button>
         </div>
@@ -460,8 +460,8 @@ function EssayEditorInner() {
           )}
         </AnimatePresence>
         {prompt && !showPromptPanel && (
-          <div className="mt-2 px-4 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-            <p className="text-sm text-amber-800 dark:text-amber-200 font-medium">{prompt}</p>
+          <div className="mt-2 px-4 py-2.5 rounded-lg bg-primary/5 border border-primary/20">
+            <p className="text-sm text-foreground font-medium">{prompt}</p>
           </div>
         )}
       </div>
@@ -484,15 +484,15 @@ function EssayEditorInner() {
       {grammarChecked && !grammarLoading && (
         <div className="mt-2 flex items-center justify-between text-xs">
           {grammarIssues.length > 0 ? (
-            <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+            <span className="flex items-center gap-1.5 score-average">
               <SpellCheck2 size={12} />
               {grammarIssues.length} issue{grammarIssues.length !== 1 ? 's' : ''} flagged — click the highlighted text to fix
             </span>
           ) : (
-            <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400"><CheckCircle size={12} />No issues found</span>
+            <span className="flex items-center gap-1.5 score-good"><CheckCircle size={12} />No issues found</span>
           )}
           {grammarIssues.some((i) => i.replacement) && (
-            <button onClick={handleApplyAllGrammarFixes} className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline">
+            <button onClick={handleApplyAllGrammarFixes} className="text-xs font-medium text-primary hover:underline">
               Apply all fixes
             </button>
           )}
@@ -508,8 +508,8 @@ function EssayEditorInner() {
           <span className="flex items-center gap-1"><Clock size={11} />~{Math.ceil(wordCount / 200)} min read</span>
         </div>
         <div className="flex items-center gap-2 text-xs">
-          {wordCount >= 250 && <span className="text-green-600 dark:text-green-400 font-medium">Good length ✓</span>}
-          {wordCount >= MIN_WORDS && wordCount < 250 && <span className="text-amber-600 dark:text-amber-400">{250 - wordCount} more words for a better score</span>}
+          {wordCount >= 250 && <span className="score-good font-medium">Good length ✓</span>}
+          {wordCount >= MIN_WORDS && wordCount < 250 && <span className="score-average">{250 - wordCount} more words for a better score</span>}
         </div>
       </div>
 
@@ -529,7 +529,7 @@ function EssayEditorInner() {
             <motion.div className="bg-card border border-border rounded-2xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-y-auto" initial={{ scale: 0.96, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.96, opacity: 0 }} onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between px-5 py-4 border-b border-border sticky top-0 bg-card">
                 <h2 className="font-display font-bold text-foreground flex items-center gap-2">
-                  <Sparkles size={16} className="text-indigo-500" />
+                  <Sparkles size={16} className="text-primary" />
                   Outline Assistant
                 </h2>
                 <button onClick={() => setShowOutlinePanel(false)} className="p-1.5 rounded-lg hover:bg-accent transition-colors"><X size={16} /></button>
@@ -550,7 +550,7 @@ function EssayEditorInner() {
                     </p>
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">Possible Thesis Angle</p>
-                      <p className="text-sm text-foreground bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">{outline.thesisSuggestion}</p>
+                      <p className="text-sm text-foreground bg-primary/5 border border-primary/20 rounded-lg p-3">{outline.thesisSuggestion}</p>
                     </div>
                     {outline.sections.map((s, i) => (
                       <div key={i}>
@@ -558,7 +558,7 @@ function EssayEditorInner() {
                         <ul className="space-y-1">
                           {s.points.map((pt, j) => (
                             <li key={j} className="flex items-start gap-2 text-sm text-muted-foreground">
-                              <span className="w-1 h-1 rounded-full bg-indigo-400 mt-2 flex-shrink-0" />{pt}
+                              <span className="w-1 h-1 rounded-full bg-primary mt-2 flex-shrink-0" />{pt}
                             </li>
                           ))}
                         </ul>
@@ -569,7 +569,7 @@ function EssayEditorInner() {
                         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">Transition Tips</p>
                         <div className="flex flex-wrap gap-2">
                           {outline.transitionTips.map((t, i) => (
-                            <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-indigo-100 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">{t}</span>
+                            <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">{t}</span>
                           ))}
                         </div>
                       </div>
@@ -588,7 +588,7 @@ function EssayEditorInner() {
             <motion.div className="bg-card border border-border rounded-2xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-y-auto" initial={{ scale: 0.96, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.96, opacity: 0 }} onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between px-5 py-4 border-b border-border sticky top-0 bg-card">
                 <h2 className="font-display font-bold text-foreground flex items-center gap-2">
-                  <ShieldCheck size={16} className="text-emerald-500" />
+                  <ShieldCheck size={16} className="score-good" />
                   AI &amp; Originality Check
                 </h2>
                 <button onClick={() => setShowIntegrityPanel(false)} className="p-1.5 rounded-lg hover:bg-accent transition-colors"><X size={16} /></button>
@@ -620,8 +620,8 @@ function EssayEditorInner() {
                     <p className="text-xs font-medium text-foreground mb-2">{aiDetection.verdict}</p>
                     <p className="text-sm text-muted-foreground mb-3">{aiDetection.explanation}</p>
                     {aiDetection.likelihood >= 60 && (
-                      <div className="mb-3 px-3 py-2 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800">
-                        <p className="text-xs font-semibold text-red-700 dark:text-red-400">
+                      <div className="mb-3 px-3 py-2 rounded-lg bg-destructive/10 border border-destructive/20">
+                        <p className="text-xs font-semibold text-destructive">
                           −{getAIPenalty(aiDetection.likelihood)} points will be deducted from your score at this likelihood if you submit as-is.
                         </p>
                       </div>
@@ -644,7 +644,7 @@ function EssayEditorInner() {
                       <p className="text-sm font-semibold text-foreground">Originality vs. Your Past Essays</p>
                       <span className="text-sm font-bold text-foreground">{originality.score}/100</span>
                     </div>
-                    <p className={`text-sm ${originality.flagged ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'}`}>{originality.note}</p>
+                    <p className={`text-sm ${originality.flagged ? 'score-average' : 'text-muted-foreground'}`}>{originality.note}</p>
                     <p className="mt-2 text-[11px] text-muted-foreground/70 italic">Checks only against your own previous submissions on PasaBoost — not a full internet plagiarism scan.</p>
                   </div>
                 )}
@@ -657,15 +657,15 @@ function EssayEditorInner() {
       <AnimatePresence>
         {isSubmitting && (
           <motion.div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <div className="bg-card border border-border rounded-2xl p-8 shadow-2xl text-center max-w-sm mx-4">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center mx-auto mb-4">
-                <Loader2 size={28} className="text-white animate-spin" />
+            <div className="bg-card border border-border rounded-lg p-8 shadow-lg text-center max-w-sm mx-4">
+              <div className="w-16 h-16 rounded-lg bg-primary flex items-center justify-center mx-auto mb-4">
+                <Loader2 size={28} className="text-primary-foreground animate-spin" />
               </div>
-              <h2 className="font-display font-bold text-xl text-foreground mb-2">Analyzing your essay…</h2>
+              <h2 className="font-display font-semibold text-xl text-foreground mb-2">Analyzing your essay…</h2>
               <p className="text-muted-foreground text-sm">Our AI is evaluating your essay on all 5 dimensions. This usually takes 10–20 seconds.</p>
               <div className="mt-5 flex gap-1.5 justify-center">
                 {['Content', 'Organization', 'Grammar', 'Coherence', 'Argument'].map((dim, i) => (
-                  <motion.div key={dim} className="w-2 h-2 rounded-full bg-blue-500" animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }} title={dim} />
+                  <motion.div key={dim} className="w-2 h-2 rounded-full bg-primary" animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }} title={dim} />
                 ))}
               </div>
             </div>

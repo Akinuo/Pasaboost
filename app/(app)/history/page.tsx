@@ -7,7 +7,7 @@ import { Search, Filter, Clock, ChevronRight, FileText, PenLine } from 'lucide-r
 import { useAuth } from '@/components/providers/AuthProvider'
 import { createClient } from '@/lib/supabase/client'
 import { getUserScores } from '@/lib/queries'
-import { getScoreColor, getScoreLabel, formatDate, EXAM_COLORS, truncateText } from '@/lib/utils'
+import { getScoreColor, getScoreBgColor, getScoreLabel, formatDate, EXAM_COLORS, truncateText } from '@/lib/utils'
 import type { EssayScore, ExamType } from '@/types'
 
 const EXAM_FILTERS: Array<ExamType | 'All'> = ['All', 'UPCAT', 'ACET', 'DCAT', 'USTET', 'General']
@@ -64,7 +64,7 @@ export default function HistoryPage() {
           <FileText size={40} className="mx-auto text-muted-foreground/40 mb-4" />
           <h2 className="text-xl font-display font-bold text-foreground mb-2">No essays yet</h2>
           <p className="text-muted-foreground mb-6">Submit your first essay to start building your history.</p>
-          <Link href="/editor" className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl font-medium hover:opacity-90 transition-opacity">
+          <Link href="/editor" className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors">
             <PenLine size={16} />
             Write First Essay
           </Link>
@@ -104,13 +104,8 @@ export default function HistoryPage() {
               filtered.map((score, i) => (
                 <motion.div key={score.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
                   <Link href={`/score/${score.id}`} className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:shadow-md transition-all group">
-                    <div className={`w-14 h-14 rounded-xl flex flex-col items-center justify-center flex-shrink-0 border ${
-                      score.totalScore >= 75 ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800' :
-                      score.totalScore >= 60 ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800' :
-                      score.totalScore >= 45 ? 'bg-yellow-50 dark:bg-yellow-950/30 border-yellow-200 dark:border-yellow-800' :
-                      'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800'
-                    }`}>
-                      <span className={`text-lg font-display font-bold leading-none ${getScoreColor(score.totalScore)}`}>{score.totalScore}</span>
+                    <div className={`w-14 h-14 rounded-lg flex flex-col items-center justify-center flex-shrink-0 border ${getScoreBgColor(score.totalScore)}`}>
+                      <span className={`text-lg font-display font-semibold leading-none ${getScoreColor(score.totalScore)}`}>{score.totalScore}</span>
                       <span className="text-xs text-muted-foreground">/100</span>
                     </div>
                     <div className="flex-1 min-w-0">

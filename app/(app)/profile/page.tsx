@@ -106,33 +106,33 @@ export default function ProfilePage() {
         <p className="page-subtitle">Manage your account and preferences</p>
       </div>
 
-      <motion.div className="bg-card border border-border rounded-2xl p-6 mb-6 flex items-center gap-5" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}>
+      <motion.div className="bg-card border border-border rounded-lg p-6 mb-6 flex items-center gap-5" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}>
         <div className="relative">
           {user?.user_metadata?.avatar_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={user.user_metadata.avatar_url} alt={displayName} className="w-20 h-20 rounded-full border-2 border-border" />
           ) : (
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center border-2 border-border">
-              <span className="text-white text-2xl font-bold">{displayName[0]?.toUpperCase() ?? 'U'}</span>
+            <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center border-2 border-border">
+              <span className="text-primary-foreground text-2xl font-semibold">{displayName[0]?.toUpperCase() ?? 'U'}</span>
             </div>
           )}
           <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-primary rounded-full flex items-center justify-center border-2 border-background">
-            <Camera size={13} className="text-white" />
+            <Camera size={13} className="text-primary-foreground" />
           </div>
         </div>
         <div>
-          <h2 className="font-display font-bold text-xl text-foreground">{displayName}</h2>
+          <h2 className="font-display font-semibold text-xl text-foreground">{displayName}</h2>
           <p className="text-muted-foreground text-sm">{user?.email}</p>
           {isGoogleUser && (
-            <span className="mt-1 inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400">Signed in with Google</span>
+            <span className="mt-1 inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">Signed in with Google</span>
           )}
         </div>
       </motion.div>
 
-      <motion.div className="bg-card border border-border rounded-2xl p-6 mb-5" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+      <motion.div className="bg-card border border-border rounded-lg p-6 mb-5" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
         <div className="flex items-center gap-2 mb-5">
           <User size={17} className="text-muted-foreground" />
-          <h3 className="font-display font-bold text-foreground">Personal Information</h3>
+          <h3 className="font-display font-semibold text-foreground">Personal Information</h3>
         </div>
         <form onSubmit={profileForm.handleSubmit(handleUpdateProfile)} className="space-y-4">
           <div>
@@ -147,19 +147,19 @@ export default function ProfilePage() {
               <span className="ml-auto text-xs text-muted-foreground">Cannot change</span>
             </div>
           </div>
-          {profileSuccess && <div className="flex items-center gap-2 text-green-600 text-sm"><CheckCircle size={15} />Profile updated successfully!</div>}
+          {profileSuccess && <div className="flex items-center gap-2 score-good text-sm"><CheckCircle size={15} />Profile updated successfully!</div>}
           {profileError && <div className="flex items-center gap-2 text-destructive text-sm"><AlertCircle size={15} />{profileError}</div>}
-          <button type="submit" disabled={isUpdatingProfile} className="flex items-center gap-2 px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50">
+          <button type="submit" disabled={isUpdatingProfile} className="flex items-center gap-2 px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50">
             <Save size={14} />{isUpdatingProfile ? 'Saving…' : 'Save Changes'}
           </button>
         </form>
       </motion.div>
 
       {!isGoogleUser && (
-        <motion.div className="bg-card border border-border rounded-2xl p-6 mb-5" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+        <motion.div className="bg-card border border-border rounded-lg p-6 mb-5" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
           <div className="flex items-center gap-2 mb-5">
             <Shield size={17} className="text-muted-foreground" />
-            <h3 className="font-display font-bold text-foreground">Change Password</h3>
+            <h3 className="font-display font-semibold text-foreground">Change Password</h3>
           </div>
           <form onSubmit={passwordForm.handleSubmit(handleUpdatePassword)} className="space-y-4">
             <div>
@@ -172,19 +172,19 @@ export default function ProfilePage() {
               </div>
               <p className="text-xs text-muted-foreground mt-1.5">Supabase re-authenticates using your current session — no need to re-enter your old password.</p>
             </div>
-            {passwordSuccess && <div className="flex items-center gap-2 text-green-600 text-sm"><CheckCircle size={15} />Password updated!</div>}
+            {passwordSuccess && <div className="flex items-center gap-2 score-good text-sm"><CheckCircle size={15} />Password updated!</div>}
             {passwordError && <div className="flex items-center gap-2 text-destructive text-sm"><AlertCircle size={15} />{passwordError}</div>}
-            <button type="submit" disabled={isUpdatingPassword} className="flex items-center gap-2 px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50">
+            <button type="submit" disabled={isUpdatingPassword} className="flex items-center gap-2 px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50">
               <Save size={14} />{isUpdatingPassword ? 'Updating…' : 'Update Password'}
             </button>
           </form>
         </motion.div>
       )}
 
-      <motion.div className="bg-card border border-border rounded-2xl p-6 mb-5" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+      <motion.div className="bg-card border border-border rounded-lg p-6 mb-5" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
         <div className="flex items-center gap-2 mb-5">
           <Bell size={17} className="text-muted-foreground" />
-          <h3 className="font-display font-bold text-foreground">Preferences</h3>
+          <h3 className="font-display font-semibold text-foreground">Preferences</h3>
         </div>
         <div className="space-y-4">
           {[
@@ -197,15 +197,15 @@ export default function ProfilePage() {
                 <p className="text-xs text-muted-foreground">{pref.desc}</p>
               </div>
               <button onClick={() => pref.onChange(!pref.value)} className={`relative w-11 h-6 rounded-full transition-colors ${pref.value ? 'bg-primary' : 'bg-muted'}`}>
-                <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${pref.value ? 'translate-x-5' : ''}`} />
+                <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-background shadow transition-transform ${pref.value ? 'translate-x-5' : ''}`} />
               </button>
             </div>
           ))}
         </div>
       </motion.div>
 
-      <motion.div className="bg-card border border-destructive/30 rounded-2xl p-6" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-        <h3 className="font-display font-bold text-foreground mb-4">Account</h3>
+      <motion.div className="bg-card border border-destructive/30 rounded-lg p-6" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+        <h3 className="font-display font-semibold text-foreground mb-4">Account</h3>
         <button onClick={handleLogout} className="flex items-center gap-2 px-5 py-2.5 bg-destructive/10 text-destructive border border-destructive/30 rounded-lg text-sm font-medium hover:bg-destructive/20 transition-colors">
           <LogOut size={15} />Sign Out
         </button>

@@ -9,6 +9,7 @@ import { z } from 'zod'
 import { motion } from 'framer-motion'
 import { Mail, Lock, Eye, EyeOff, Chrome, ArrowLeft, AlertCircle } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
+import LogoMark from '@/components/ui/LogoMark'
 import type { LoginFormValues } from '@/types'
 
 const loginSchema = z.object({
@@ -53,19 +54,20 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background bg-hero-pattern px-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-background relative px-4">
+      <div className="absolute inset-0 bg-rule-pattern bg-rule opacity-50 [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)]" />
+      <div className="w-full max-w-md relative">
         <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8 transition-colors">
           <ArrowLeft size={16} />
           Back to home
         </Link>
 
-        <motion.div className="bg-card border border-border rounded-2xl p-8 shadow-xl" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <motion.div className="bg-card border border-border rounded-lg p-8 shadow-sm" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <div className="text-center mb-8">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center mx-auto mb-4 shadow-lg">
-              <span className="text-2xl font-display font-bold text-amber-400">P</span>
+            <div className="flex justify-center mb-4">
+              <LogoMark size={52} />
             </div>
-            <h1 className="text-2xl font-display font-bold text-foreground">Welcome back</h1>
+            <h1 className="text-2xl font-display font-semibold text-foreground">Welcome back</h1>
             <p className="text-muted-foreground text-sm mt-1">Sign in to continue your practice</p>
           </div>
 
@@ -116,9 +118,9 @@ function LoginForm() {
               {errors.password && <p className="text-xs text-destructive mt-1">{errors.password.message}</p>}
             </div>
 
-            <button type="submit" disabled={isLoading || isGoogleLoading} className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2">
-              {isLoading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-              Sign In
+            <button type="submit" disabled={isLoading || isGoogleLoading} className="w-full py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+              {isLoading && <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />}
+              Sign in
             </button>
           </form>
 

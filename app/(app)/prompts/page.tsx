@@ -11,9 +11,9 @@ import { getDailyGeneratedPrompts } from '@/lib/queries'
 import type { PromptCategory, ExamType, WritingPrompt } from '@/types'
 
 const DIFFICULTY_COLORS = {
-  Beginner: 'bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400',
-  Intermediate: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-950/40 dark:text-yellow-400',
-  Advanced: 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400',
+  Beginner: 'bg-muted text-muted-foreground',
+  Intermediate: 'bg-primary/10 text-primary',
+  Advanced: 'bg-primary/20 text-primary font-semibold',
 } as const
 
 export default function PromptsPage() {
@@ -72,34 +72,34 @@ export default function PromptsPage() {
         </p>
       </div>
 
-      <motion.div className="mb-8 rounded-2xl overflow-hidden border border-amber-200 dark:border-amber-800/50 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="px-6 py-4 border-b border-amber-200 dark:border-amber-800/50 flex items-center gap-2">
-          <Star size={15} className="text-amber-500 fill-amber-500" />
-          <span className="text-sm font-semibold text-amber-800 dark:text-amber-300">Today&apos;s Daily Prompt</span>
+      <motion.div className="mb-8 rounded-lg overflow-hidden border border-border bg-primary/[0.04]" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+        <div className="px-6 py-4 border-b border-border flex items-center gap-2">
+          <Star size={15} className="text-primary fill-primary" />
+          <span className="text-sm font-semibold text-foreground">Today&apos;s Daily Prompt</span>
           {aiPrompts.length > 0 && (
-            <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300">
+            <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/15 text-primary">
               <Sparkles size={10} />
               AI Generated
             </span>
           )}
-          <span className="ml-auto text-xs text-amber-600 dark:text-amber-400">{new Date().toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
+          <span className="ml-auto text-xs text-muted-foreground">{new Date().toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
         </div>
         <div className="px-6 py-5">
           <p className="text-foreground font-medium leading-relaxed mb-4">{dailyPrompt.text}</p>
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-2">
-              <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">{dailyPrompt.category}</span>
+              <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-muted text-muted-foreground">{dailyPrompt.category}</span>
               <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${DIFFICULTY_COLORS[dailyPrompt.difficulty]}`}>{dailyPrompt.difficulty}</span>
             </div>
-            <button onClick={() => handleUsePrompt(dailyPrompt.text, dailyPrompt.examType[0])} className="flex items-center gap-2 px-5 py-2 bg-amber-500 text-white font-medium rounded-xl hover:bg-amber-600 transition-colors text-sm">
+            <button onClick={() => handleUsePrompt(dailyPrompt.text, dailyPrompt.examType[0])} className="flex items-center gap-2 px-5 py-2 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors text-sm">
               <PenLine size={14} />
               Write This Essay
             </button>
           </div>
           {dailyPrompt.tip && (
-            <div className="mt-4 flex items-start gap-2 text-sm text-amber-700 dark:text-amber-400">
-              <Lightbulb size={14} className="flex-shrink-0 mt-0.5" />
-              <span><strong>Tip:</strong> {dailyPrompt.tip}</span>
+            <div className="mt-4 flex items-start gap-2 text-sm text-muted-foreground">
+              <Lightbulb size={14} className="flex-shrink-0 mt-0.5 text-primary" />
+              <span><strong className="text-foreground">Tip:</strong> {dailyPrompt.tip}</span>
             </div>
           )}
         </div>
@@ -142,10 +142,10 @@ export default function PromptsPage() {
         {filtered.map((prompt, i) => (
           <motion.div key={prompt.id} className="bg-card border border-border rounded-xl p-5 hover:shadow-md transition-shadow flex flex-col" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.04, 0.4) }}>
             <div className="flex items-center gap-2 mb-3 flex-wrap">
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400">{prompt.category}</span>
+              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{prompt.category}</span>
               <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${DIFFICULTY_COLORS[prompt.difficulty]}`}>{prompt.difficulty}</span>
               {prompt.isDaily && (
-                <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300">
+                <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/15 text-primary">
                   <Sparkles size={9} />
                   AI Generated
                 </span>
@@ -173,7 +173,7 @@ export default function PromptsPage() {
             </div>
             {prompt.tip && (
               <div className="mt-3 flex items-start gap-1.5 text-xs text-muted-foreground border-t border-border pt-3">
-                <Lightbulb size={12} className="flex-shrink-0 mt-0.5 text-amber-500" />
+                <Lightbulb size={12} className="flex-shrink-0 mt-0.5 text-primary" />
                 {prompt.tip}
               </div>
             )}
