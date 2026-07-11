@@ -44,13 +44,39 @@ function getGroqClient(): Groq | null {
 // this platform actively coaches students to use them, so flagging
 // them punishes exactly the well-structured writing we're teaching.
 // These are phrases that lean generic/filler rather than standard
-// academic connective tissue.
+// academic connective tissue. Kept deliberately light-weight — see
+// CHAT_LEAKAGE_PHRASES below for the much stronger signal.
 const AI_STOCK_PHRASES = [
   'delve into', 'in today\'s society', 'in the fast-paced world',
   'as we navigate', 'in an era of', 'a testament to',
   'underscores the importance', 'in the realm of', 'ever-evolving',
   'multifaceted', 'plays a crucial role', 'this essay will explore',
   'in the tapestry of', 'stands as a', 'serves as a reminder',
+]
+
+// Near-certain evidence: leftover conversational wrapper text from
+// pasting a chat assistant's reply directly. This is deliberately
+// MODEL-AGNOSTIC — every chat AI product (ChatGPT, Claude, Gemini,
+// Copilot, Llama-based assistants, DeepSeek, and anything built on
+// top of them) produces some version of this framing when asked to
+// "write an essay about X", regardless of which underlying model is
+// doing the writing. Chasing one model's specific prose tics is a
+// losing game since every new model release shifts them; catching the
+// chat-interface artifacts themselves generalizes far better.
+const CHAT_LEAKAGE_PHRASES = [
+  'as an ai', 'as a language model', 'as a large language model',
+  "i'm an ai", 'i am an ai', "i'm just an ai", 'i am just an ai',
+  'i do not have personal experiences', "i don't have personal experiences",
+  'i do not have personal opinions', "i don't have personal opinions",
+  'i do not have feelings', "i don't have feelings",
+  'my training data', 'my knowledge cutoff',
+  'i hope this essay helps', 'i hope this helps',
+  "let me know if you'd like", 'let me know if you need',
+  'feel free to let me know', 'feel free to ask',
+  'here is a revised version', "here's a revised version",
+  'here is your essay', "here's your essay",
+  'here is the essay you requested', "here's the essay you requested",
+  'certainly! here', 'sure! here', 'sure, here', 'of course! here', 'absolutely! here',
 ]
 
 function computeHeuristicScore(essay: string): { score: number; signals: string[] } {
@@ -86,6 +112,15 @@ function computeHeuristicScore(essay: string): { score: number; signals: string[
     signals.push(`Contains ${hits.length} generic AI-flavored phrases (e.g. "${hits[0]}").`)
   }
 
+  // Chat-interface leakage — near-certain evidence regardless of which
+  // AI product produced it, so this gets a much heavier weight than
+  // ordinary style signals. A single hit is enough.
+  const leakageHits = CHAT_LEAKAGE_PHRASES.filter((p) => lowerEssay.includes(p))
+  if (leakageHits.length >= 1) {
+    score += 55
+    signals.push(`Contains direct AI-assistant phrasing (e.g. "${leakageHits[0]}") — reads like a copy-pasted chatbot reply rather than an original essay.`)
+  }
+
   // Vocabulary diversity (type-token ratio) — lightly weighted, since low
   // diversity can also just mean a focused, on-topic essay.
   const uniqueWords = new Set(words.map((w) => w.toLowerCase().replace(/[^\w]/g, '')))
@@ -117,7 +152,13 @@ async function llmAIJudgment(essay: string): Promise<{ likelihood: number; indic
       messages: [
         {
           role: 'system',
-          content: `You are an academic-integrity reviewer analyzing student essays for signs of AI-generated (ChatGPT/LLM) authorship, for a Philippine college-entrance essay coaching tool. These students are actively coached to write formal, well-structured essays with clear transitions and no contractions — that is correct, TAUGHT technique, not evidence of AI authorship. Do NOT treat formal tone, proper structure, standard transition words (e.g. "furthermore", "moreover", "in conclusion"), or grammatical correctness as signals on their own — a strong human student is expected to produce exactly that. Instead, weigh genuine indicators: near-total absence of any specific personal detail, memory, or concrete example across the WHOLE essay; generic claims that could apply to any topic interchangeably; characteristic LLM phrasing (e.g. "as an AI", excessive hedging like "it is important to note that" stacked repeatedly, oddly encyclopedic tangents unrelated to a personal prompt); or a mismatch between vocabulary sophistication and the reasoning/content quality. Be evidence-based, hedge honestly when uncertain, and do not fabricate signals that aren't present. Respond with ONLY valid JSON:
+          content: `You are an academic-integrity reviewer analyzing student essays for signs of AI-generated authorship, for a Philippine college-entrance essay coaching tool. The essay could have been produced by any AI assistant — ChatGPT, Claude, Gemini, Copilot, a Llama-based tool, or anything else — so do not assume one specific model's house style; draw on your general knowledge of how AI-written text tends to differ from student writing across assistants, not just one.
+
+These students are actively coached to write formal, well-structured essays with clear transitions and no contractions — that is correct, TAUGHT technique, not evidence of AI authorship. Do NOT treat formal tone, proper structure, standard transition words (e.g. "furthermore", "moreover", "in conclusion"), or grammatical correctness as signals on their own — a strong human student is expected to produce exactly that.
+
+The single strongest signal, if present, is leftover chat-assistant framing: phrases like "as an AI", "I don't have personal experiences", "here's your essay", or "let me know if you'd like revisions" — these mean the text was very likely copy-pasted directly from a chatbot reply, regardless of which AI produced it. Treat any such phrasing as strong evidence on its own.
+
+Beyond that, weigh genuine indicators: near-total absence of any specific personal detail, memory, or concrete example across the WHOLE essay; generic claims that could apply to any topic interchangeably; oddly encyclopedic tangents unrelated to a personal prompt; or a mismatch between vocabulary sophistication and the reasoning/content quality. Be evidence-based, hedge honestly when uncertain, and do not fabricate signals that aren't present. Respond with ONLY valid JSON:
 {"likelihood": <0-100 integer, your estimate that this was AI-generated>, "indicators": ["<short observed signal 1>", "<short observed signal 2>", "<short observed signal 3>"], "explanation": "<1-2 sentence honest, hedged assessment>"}`,
         },
         { role: 'user', content: `Essay to analyze:\n\n${essay}` },
