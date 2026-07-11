@@ -127,7 +127,7 @@ export type Database = {
           badge: string | null
           best_score: number
           essay_count: number
-          exam_type: string | null
+          exam_type: string
           improvement: number | null
           last_updated: string | null
           user_id: string
@@ -138,7 +138,7 @@ export type Database = {
           badge?: string | null
           best_score?: number
           essay_count?: number
-          exam_type?: string | null
+          exam_type?: string
           improvement?: number | null
           last_updated?: string | null
           user_id: string
@@ -149,7 +149,7 @@ export type Database = {
           badge?: string | null
           best_score?: number
           essay_count?: number
-          exam_type?: string | null
+          exam_type?: string
           improvement?: number | null
           last_updated?: string | null
           user_id?: string

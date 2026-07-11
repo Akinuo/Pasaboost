@@ -39,76 +39,66 @@ function getGroqClient(): Groq | null {
 // 1. AI-detection heuristics (pure JS, no API cost)
 // ============================================================
 
+// Deliberately does NOT include ordinary transition words like
+// "furthermore", "moreover", "in conclusion", or "on the other hand" —
+// this platform actively coaches students to use them, so flagging
+// them punishes exactly the well-structured writing we're teaching.
+// These are phrases that lean generic/filler rather than standard
+// academic connective tissue.
 const AI_STOCK_PHRASES = [
-  'in conclusion', 'in today\'s society', 'it is important to note',
-  'delve into', 'furthermore', 'moreover', 'in the fast-paced world',
-  'plays a crucial role', 'as we navigate', 'in an era of',
-  'it is worth noting', 'this essay will explore', 'in summary',
-  'on the other hand', 'a testament to', 'underscores the importance',
-  'in the realm of', 'ever-evolving', 'multifaceted',
+  'delve into', 'in today\'s society', 'in the fast-paced world',
+  'as we navigate', 'in an era of', 'a testament to',
+  'underscores the importance', 'in the realm of', 'ever-evolving',
+  'multifaceted', 'plays a crucial role', 'this essay will explore',
+  'in the tapestry of', 'stands as a', 'serves as a reminder',
 ]
 
 function computeHeuristicScore(essay: string): { score: number; signals: string[] } {
   const sentences = essay.split(/(?<=[.!?])\s+/).filter((s) => s.trim().length > 0)
   const words = essay.split(/\s+/).filter(Boolean)
   const signals: string[] = []
-  let score = 35 // baseline — starts a bit more suspicious
+  let score = 15 // neutral-ish baseline — most of the weight should come from actual signals
 
-  // Sentence-length burstiness: human writing varies sentence length more.
+  // Sentence-length burstiness: human writing varies sentence length more,
+  // but a fairly uniform CV is common in coached formal essays too, so this
+  // only kicks in for genuinely extreme uniformity.
   if (sentences.length >= 4) {
     const lens = sentences.map((s) => s.split(/\s+/).filter(Boolean).length)
     const mean = lens.reduce((a, b) => a + b, 0) / lens.length
     const variance = lens.reduce((a, b) => a + (b - mean) ** 2, 0) / lens.length
     const stdDev = Math.sqrt(variance)
     const coefficientOfVariation = mean > 0 ? stdDev / mean : 0
-    if (coefficientOfVariation < 0.3) {
-      score += 25
+    if (coefficientOfVariation < 0.18) {
+      score += 12
       signals.push('Sentence lengths are unusually uniform (low variation) — a common trait of LLM output.')
-    } else if (coefficientOfVariation > 0.55) {
-      score -= 8
+    } else if (coefficientOfVariation > 0.5) {
+      score -= 6
       signals.push('Sentence lengths vary a lot, which is typical of natural human writing.')
     }
   }
 
-  // Stock AI-essay phrases
+  // Stock AI-essay phrases — require at least 2 hits before penalizing,
+  // since a single instance is well within normal essay-writing range.
   const lowerEssay = essay.toLowerCase()
   const hits = AI_STOCK_PHRASES.filter((p) => lowerEssay.includes(p))
-  if (hits.length >= 1) {
-    score += Math.min(30, hits.length * 10)
-    signals.push(`Contains ${hits.length} commonly AI-generated stock phrase${hits.length > 1 ? 's' : ''} (e.g. "${hits[0]}").`)
+  if (hits.length >= 2) {
+    score += Math.min(18, hits.length * 6)
+    signals.push(`Contains ${hits.length} generic AI-flavored phrases (e.g. "${hits[0]}").`)
   }
 
-  // Vocabulary diversity (type-token ratio) — AI text is often smoother/more repetitive at scale,
-  // but very LOW diversity can also just mean short/simple writing, so weight this lightly.
+  // Vocabulary diversity (type-token ratio) — lightly weighted, since low
+  // diversity can also just mean a focused, on-topic essay.
   const uniqueWords = new Set(words.map((w) => w.toLowerCase().replace(/[^\w]/g, '')))
   const ttr = words.length > 0 ? uniqueWords.size / words.length : 0
-  if (words.length > 120 && ttr < 0.42) {
-    score += 10
+  if (words.length > 150 && ttr < 0.38) {
+    score += 6
     signals.push('Vocabulary is fairly repetitive for the essay length.')
   }
 
-  // Near-total absence of contractions/informal markers in a personal essay
-  const hasContractions = /\b(don't|can't|it's|i'm|didn't|wasn't|there's|wouldn't|couldn't)\b/i.test(essay)
-  if (!hasContractions && words.length > 120) {
-    score += 8
-    signals.push('No contractions used — slightly more formal/uniform than typical student writing.')
-  } else if (hasContractions) {
-    score -= 5
-  }
-
-  // Overly balanced/symmetric paragraph structure (near-identical paragraph lengths)
-  // is another common LLM tell — humans rarely write paragraphs of near-equal length.
-  const paragraphs = essay.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean)
-  if (paragraphs.length >= 3) {
-    const pLens = paragraphs.map((p) => p.split(/\s+/).filter(Boolean).length)
-    const pMean = pLens.reduce((a, b) => a + b, 0) / pLens.length
-    const pVariance = pLens.reduce((a, b) => a + (b - pMean) ** 2, 0) / pLens.length
-    const pCV = pMean > 0 ? Math.sqrt(pVariance) / pMean : 0
-    if (pCV < 0.2) {
-      score += 12
-      signals.push('Paragraphs are suspiciously similar in length — often a sign of templated AI structure.')
-    }
-  }
+  // Note: earlier versions of this checker penalized formal tone (no
+  // contractions) and balanced paragraph lengths as AI tells. Both are
+  // *correct, taught technique* for a UPCAT/ACET-style formal essay, so
+  // penalizing them punished students for writing well. Removed.
 
   return { score: Math.max(0, Math.min(100, score)), signals }
 }
@@ -127,7 +117,7 @@ async function llmAIJudgment(essay: string): Promise<{ likelihood: number; indic
       messages: [
         {
           role: 'system',
-          content: `You are a strict academic-integrity reviewer analyzing student essays for signs of AI-generated (ChatGPT/LLM) authorship, for a Philippine college-entrance essay coaching tool. Apply rigorous scrutiny — this tool exists specifically to catch AI-assisted submissions, so err toward flagging borderline or ambiguous cases rather than giving the benefit of the doubt. Treat generic phrasing, overly polished/uniform structure, textbook transitions, and a lack of specific personal detail as meaningful evidence of AI authorship, not just neutral style. Still be evidence-based and do not fabricate signals that aren't present. Respond with ONLY valid JSON:
+          content: `You are an academic-integrity reviewer analyzing student essays for signs of AI-generated (ChatGPT/LLM) authorship, for a Philippine college-entrance essay coaching tool. These students are actively coached to write formal, well-structured essays with clear transitions and no contractions — that is correct, TAUGHT technique, not evidence of AI authorship. Do NOT treat formal tone, proper structure, standard transition words (e.g. "furthermore", "moreover", "in conclusion"), or grammatical correctness as signals on their own — a strong human student is expected to produce exactly that. Instead, weigh genuine indicators: near-total absence of any specific personal detail, memory, or concrete example across the WHOLE essay; generic claims that could apply to any topic interchangeably; characteristic LLM phrasing (e.g. "as an AI", excessive hedging like "it is important to note that" stacked repeatedly, oddly encyclopedic tangents unrelated to a personal prompt); or a mismatch between vocabulary sophistication and the reasoning/content quality. Be evidence-based, hedge honestly when uncertain, and do not fabricate signals that aren't present. Respond with ONLY valid JSON:
 {"likelihood": <0-100 integer, your estimate that this was AI-generated>, "indicators": ["<short observed signal 1>", "<short observed signal 2>", "<short observed signal 3>"], "explanation": "<1-2 sentence honest, hedged assessment>"}`,
         },
         { role: 'user', content: `Essay to analyze:\n\n${essay}` },
@@ -152,8 +142,8 @@ async function llmAIJudgment(essay: string): Promise<{ likelihood: number; indic
 }
 
 function verdictFromLikelihood(likelihood: number): AIDetectionVerdict {
-  if (likelihood >= 55) return 'Likely AI-Generated'
-  if (likelihood >= 28) return 'Mixed / Possibly AI-Assisted'
+  if (likelihood >= 65) return 'Likely AI-Generated'
+  if (likelihood >= 35) return 'Mixed / Possibly AI-Assisted'
   return 'Likely Human-Written'
 }
 

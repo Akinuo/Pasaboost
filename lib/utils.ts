@@ -175,3 +175,105 @@ export function generateLeaderboardAlias(): string {
   const num = Math.floor(Math.random() * 900) + 100
   return `${adj}${noun}_${num}`
 }
+
+// ============================================================
+// Leaderboard aggregation — shared between the client-side
+// opt-in/score-submit flow (lib/queries.ts) and the server-side
+// refresh-leaderboard cron route, so both compute rankings exactly
+// the same way and one "Overall" + one row per exam type always
+// stay in sync with each other.
+// ============================================================
+
+export const OVERALL_LEADERBOARD_KEY = 'Overall'
+
+export interface LeaderboardRowInput {
+  user_id: string
+  alias: string
+  exam_type: string
+  average_score: number
+  essay_count: number
+  best_score: number
+  improvement: number
+}
+
+// Recent-half vs. earlier-half average, so "improvement" reflects a
+// genuine trend rather than a single lucky (or unlucky) essay.
+export function computeImprovement(totalsOldestFirst: number[]): number {
+  if (totalsOldestFirst.length < 2) return 0
+  const recentCount = Math.max(1, Math.min(3, Math.floor(totalsOldestFirst.length / 2)))
+  const recent = totalsOldestFirst.slice(-recentCount)
+  const earlier = totalsOldestFirst.slice(0, totalsOldestFirst.length - recentCount)
+  const avg = (arr: number[]) => arr.reduce((s, v) => s + v, 0) / arr.length
+  return Math.round(avg(recent) - avg(earlier))
+}
+
+function aggregateOne(userId: string, alias: string, examType: string, totalsOldestFirst: number[]): LeaderboardRowInput {
+  const essayCount = totalsOldestFirst.length
+  return {
+    user_id: userId,
+    alias,
+    exam_type: examType,
+    average_score: essayCount ? Math.round(totalsOldestFirst.reduce((s, v) => s + v, 0) / essayCount) : 0,
+    essay_count: essayCount,
+    best_score: essayCount ? Math.max(...totalsOldestFirst) : 0,
+    improvement: computeImprovement(totalsOldestFirst),
+  }
+}
+
+// Builds one "Overall" row plus one row per exam type the student has
+// at least one score for. `scoresOldestFirst` must be sorted oldest
+// first so improvement can compare early vs. recent attempts correctly.
+export function computeLeaderboardRows(
+  userId: string,
+  alias: string,
+  scoresOldestFirst: Array<{ totalScore: number; examType: string }>
+): LeaderboardRowInput[] {
+  const overall = aggregateOne(userId, alias, OVERALL_LEADERBOARD_KEY, scoresOldestFirst.map((s) => s.totalScore))
+
+  const byExam = new Map<string, number[]>()
+  for (const s of scoresOldestFirst) {
+    const list = byExam.get(s.examType) ?? []
+    list.push(s.totalScore)
+    byExam.set(s.examType, list)
+  }
+
+  const perExam = Array.from(byExam.entries()).map(([examType, totals]) => aggregateOne(userId, alias, examType, totals))
+
+  return [overall, ...perExam]
+}
+
+// ============================================================
+// Leaderboard alias validation — format + a light profanity filter.
+// This is the client-side copy for instant feedback; the same rules
+// are enforced again server-side by a Postgres trigger (see
+// supabase/migrations/0005_leaderboard_upgrades.sql) so they can't be
+// bypassed by calling the API directly. Deliberately a light,
+// common-sense list — not a claim of bulletproof moderation.
+// ============================================================
+
+const ALIAS_FORMAT = /^[A-Za-z0-9_]{3,30}$/
+
+const ALIAS_BLOCKED_SUBSTRINGS = [
+  // English
+  'fuck', 'shit', 'bitch', 'asshole', 'bastard', 'cunt', 'dick', 'pussy',
+  'nigger', 'nigga', 'faggot', 'retard', 'whore', 'slut', 'rape',
+  // Tagalog / Filipino
+  'putangina', 'putanginamo', 'gago', 'gaga', 'tangina', 'tarantado',
+  'ulol', 'bobo', 'inutil', 'leche', 'pakshet', 'peste', 'kupal',
+  'hayop', 'punyeta', 'buwisit',
+]
+
+export function validateLeaderboardAlias(raw: string): { valid: boolean; error?: string } {
+  const alias = raw.trim()
+
+  if (!ALIAS_FORMAT.test(alias)) {
+    return { valid: false, error: 'Use 3-30 letters, numbers, or underscores — no spaces or symbols.' }
+  }
+
+  const normalized = alias.toLowerCase()
+  if (ALIAS_BLOCKED_SUBSTRINGS.some((word) => normalized.includes(word))) {
+    return { valid: false, error: "That username isn't allowed. Please choose another." }
+  }
+
+  return { valid: true }
+}

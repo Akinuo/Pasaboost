@@ -3,11 +3,11 @@
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { motion } from 'framer-motion'
-import { User, Mail, Bell, Shield, LogOut, Save, Eye, EyeOff, Camera, CheckCircle, AlertCircle } from 'lucide-react'
+import { User, Mail, Bell, Shield, LogOut, Save, Eye, EyeOff, Camera, CheckCircle, AlertCircle, Shuffle } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { createClient } from '@/lib/supabase/client'
-import { getProfile, updateProfile, upsertLeaderboardEntry, removeLeaderboardEntry, getUserScores } from '@/lib/queries'
-import { generateLeaderboardAlias } from '@/lib/utils'
+import { getProfile, updateProfile, syncLeaderboardEntries, renameLeaderboardAlias, removeLeaderboardEntry, getUserScores } from '@/lib/queries'
+import { generateLeaderboardAlias, validateLeaderboardAlias } from '@/lib/utils'
 
 export default function ProfilePage() {
   const { user, logout } = useAuth()
@@ -22,6 +22,11 @@ export default function ProfilePage() {
   const [showNewPw, setShowNewPw] = useState(false)
   const [leaderboardEnabled, setLeaderboardEnabled] = useState(false)
   const [emailNotifs, setEmailNotifs] = useState(false)
+  const [leaderboardAlias, setLeaderboardAlias] = useState<string | null>(null)
+  const [aliasInput, setAliasInput] = useState('')
+  const [aliasError, setAliasError] = useState<string | null>(null)
+  const [aliasSuccess, setAliasSuccess] = useState(false)
+  const [aliasSaving, setAliasSaving] = useState(false)
 
   const profileForm = useForm({ defaultValues: { displayName: '' } })
   const passwordForm = useForm({ defaultValues: { newPassword: '' } })
@@ -33,6 +38,8 @@ export default function ProfilePage() {
         profileForm.setValue('displayName', profile.displayName || '')
         setLeaderboardEnabled(profile.leaderboardEnabled)
         setEmailNotifs(profile.emailNotifications)
+        setLeaderboardAlias(profile.leaderboardAlias)
+        setAliasInput(profile.leaderboardAlias || '')
       }
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -76,13 +83,48 @@ export default function ProfilePage() {
     await updateProfile(supabase, user.id, { leaderboardEnabled: enabled })
 
     if (enabled) {
-      const alias = generateLeaderboardAlias()
-      const scores = await getUserScores(supabase, user.id, { limit: 50 })
-      const avg = scores.length ? Math.round(scores.reduce((s, e) => s + e.totalScore, 0) / scores.length) : 0
-      const best = scores.length ? Math.max(...scores.map((s) => s.totalScore)) : 0
-      await upsertLeaderboardEntry(supabase, user.id, { alias, averageScore: avg, essayCount: scores.length, bestScore: best, improvement: 0 })
+      // Reuse the student's existing alias if they've set one before —
+      // opting out and back in shouldn't hand them a new random name.
+      let alias = leaderboardAlias
+      if (!alias) {
+        alias = generateLeaderboardAlias()
+        await updateProfile(supabase, user.id, { leaderboardAlias: alias })
+        setLeaderboardAlias(alias)
+        setAliasInput(alias)
+      }
+      const scores = await getUserScores(supabase, user.id, { limit: 200 })
+      const oldestFirst = [...scores].reverse().map((s) => ({ totalScore: s.totalScore, examType: s.examType }))
+      await syncLeaderboardEntries(supabase, user.id, alias, oldestFirst)
     } else {
       await removeLeaderboardEntry(supabase, user.id)
+    }
+  }
+
+  const handleShuffleAlias = () => {
+    setAliasInput(generateLeaderboardAlias())
+    setAliasError(null)
+  }
+
+  const handleSaveAlias = async () => {
+    if (!user) return
+    const check = validateLeaderboardAlias(aliasInput)
+    if (!check.valid) {
+      setAliasError(check.error ?? 'Invalid username.')
+      return
+    }
+    const clean = aliasInput.trim()
+    setAliasError(null)
+    setAliasSaving(true)
+    try {
+      await updateProfile(supabase, user.id, { leaderboardAlias: clean })
+      if (leaderboardEnabled) await renameLeaderboardAlias(supabase, user.id, clean)
+      setLeaderboardAlias(clean)
+      setAliasSuccess(true)
+      setTimeout(() => setAliasSuccess(false), 2500)
+    } catch {
+      setAliasError('That username could not be saved. Please try a different one.')
+    } finally {
+      setAliasSaving(false)
     }
   }
 
@@ -188,7 +230,7 @@ export default function ProfilePage() {
         </div>
         <div className="space-y-4">
           {[
-            { label: 'Anonymous Leaderboard', desc: 'Appear on the public leaderboard with a random alias', value: leaderboardEnabled, onChange: handleToggleLeaderboard },
+            { label: 'Anonymous Leaderboard', desc: 'Appear on the public leaderboard with a chosen or random alias', value: leaderboardEnabled, onChange: handleToggleLeaderboard },
             { label: 'Email Notifications', desc: 'Get weekly progress summaries and writing reminders', value: emailNotifs, onChange: handleToggleNotifs },
           ].map((pref) => (
             <div key={pref.label} className="flex items-center justify-between gap-4">
@@ -201,6 +243,35 @@ export default function ProfilePage() {
               </button>
             </div>
           ))}
+
+          {leaderboardEnabled && (
+            <div className="pt-3 mt-1 border-t border-border">
+              <label className="block text-sm font-medium text-foreground mb-1.5">Leaderboard username</label>
+              <div className="flex items-center gap-2">
+                <input
+                  value={aliasInput}
+                  onChange={(e) => { setAliasInput(e.target.value); setAliasError(null) }}
+                  placeholder="e.g. QuietScholar_482"
+                  maxLength={30}
+                  className="flex-1 px-3 py-2.5 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+                <button type="button" onClick={handleShuffleAlias} title="Generate a random name" className="p-2.5 rounded-lg border border-input text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
+                  <Shuffle size={15} />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveAlias}
+                  disabled={aliasSaving || aliasInput.trim() === (leaderboardAlias || '')}
+                  className="px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  {aliasSaving ? 'Saving…' : 'Save'}
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1.5">3-30 letters, numbers, or underscores. This is what other students see instead of your real name.</p>
+              {aliasSuccess && <div className="flex items-center gap-2 score-good text-sm mt-2"><CheckCircle size={15} />Username updated!</div>}
+              {aliasError && <div className="flex items-center gap-2 text-destructive text-sm mt-2"><AlertCircle size={15} />{aliasError}</div>}
+            </div>
+          )}
         </div>
       </motion.div>
 

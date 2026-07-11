@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { createClient } from '@/lib/supabase/client'
-import { saveDraft, updateDraft, getUserDrafts, deleteDraft, getDraft } from '@/lib/queries'
+import { saveDraft, updateDraft, getUserDrafts, deleteDraft, getDraft, getProfile, getUserScores, syncLeaderboardEntries } from '@/lib/queries'
 import { scoreEssayViaAPI, generateMockScore } from '@/lib/scoreApi'
 import { checkIntegrityViaAPI } from '@/lib/integrityApi'
 import { generateOutlineViaAPI } from '@/lib/outlineApi'
@@ -307,6 +307,21 @@ function EssayEditorInner() {
         .single()
 
       if (insertError || !inserted) throw insertError ?? new Error('Failed to save score')
+
+      // Keep the leaderboard live: if this student has opted in, refresh
+      // their Overall + this exam type's row right away rather than
+      // waiting up to 30 minutes for the next cron refresh. Non-fatal —
+      // never blocks navigation to the results page.
+      try {
+        const profile = await getProfile(supabase, user.id)
+        if (profile?.leaderboardEnabled && profile.leaderboardAlias) {
+          const allScores = await getUserScores(supabase, user.id, { limit: 200 })
+          const oldestFirst = [...allScores].reverse().map((s) => ({ totalScore: s.totalScore, examType: s.examType }))
+          await syncLeaderboardEntries(supabase, user.id, profile.leaderboardAlias, oldestFirst)
+        }
+      } catch (syncErr) {
+        console.error('Leaderboard sync failed (non-fatal):', syncErr)
+      }
 
       router.push(`/score/${inserted.id}`)
     } catch (err) {

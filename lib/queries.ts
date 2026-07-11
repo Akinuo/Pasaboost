@@ -7,6 +7,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/database.types'
+import { computeLeaderboardRows, OVERALL_LEADERBOARD_KEY } from '@/lib/utils'
 import type {
   EssayDraft, EssayScore, UserStats, UserProfile,
   LeaderboardEntry, ScoreDataPoint, ExamType, RubricScore, WritingPrompt,
@@ -110,13 +111,14 @@ export async function getProfile(supabase: TypedClient, userId: string): Promise
 export async function updateProfile(
   supabase: TypedClient,
   userId: string,
-  updates: Partial<{ displayName: string; leaderboardEnabled: boolean; emailNotifications: boolean }>
+  updates: Partial<{ displayName: string; leaderboardEnabled: boolean; leaderboardAlias: string; emailNotifications: boolean }>
 ) {
   const { error } = await supabase
     .from('profiles')
     .update({
       ...(updates.displayName !== undefined && { display_name: updates.displayName }),
       ...(updates.leaderboardEnabled !== undefined && { leaderboard_enabled: updates.leaderboardEnabled }),
+      ...(updates.leaderboardAlias !== undefined && { leaderboard_alias: updates.leaderboardAlias }),
       ...(updates.emailNotifications !== undefined && { email_notifications: updates.emailNotifications }),
     })
     .eq('id', userId)
@@ -285,17 +287,13 @@ export async function getLeaderboard(
   examType?: ExamType,
   topN = 20
 ): Promise<LeaderboardEntry[]> {
-  let query = supabase
+  const { data, error } = await supabase
     .from('leaderboard')
     .select('*')
+    .eq('exam_type', examType ?? OVERALL_LEADERBOARD_KEY)
     .order('average_score', { ascending: false })
     .limit(topN)
 
-  if (examType) {
-    query = query.eq('exam_type', examType)
-  }
-
-  const { data, error } = await query
   if (error || !data) return []
 
   return data.map((row, idx) => ({
@@ -305,26 +303,34 @@ export async function getLeaderboard(
     essayCount: row.essay_count,
     bestScore: row.best_score,
     improvement: row.improvement ?? 0,
-    examType: row.exam_type as ExamType | undefined,
+    examType: row.exam_type === OVERALL_LEADERBOARD_KEY ? undefined : (row.exam_type as ExamType),
     badge: row.badge ?? undefined,
   }))
 }
 
-export async function upsertLeaderboardEntry(
+// Recomputes and upserts one "Overall" row plus one row per exam type
+// the student has at least one score for. Called whenever a student
+// opts into the leaderboard and again right after each new essay is
+// scored, so their entry (and the specific exam-type tab it belongs
+// under) stays current without waiting on the periodic cron refresh.
+export async function syncLeaderboardEntries(
   supabase: TypedClient,
   userId: string,
-  entry: { alias: string; averageScore: number; essayCount: number; bestScore: number; improvement: number; examType?: ExamType }
+  alias: string,
+  scoresOldestFirst: Array<{ totalScore: number; examType: ExamType }>
 ): Promise<void> {
-  const { error } = await supabase.from('leaderboard').upsert({
-    user_id: userId,
-    alias: entry.alias,
-    average_score: entry.averageScore,
-    essay_count: entry.essayCount,
-    best_score: entry.bestScore,
-    improvement: entry.improvement,
-    exam_type: entry.examType,
+  const rows = computeLeaderboardRows(userId, alias, scoresOldestFirst).map((row) => ({
+    ...row,
     last_updated: new Date().toISOString(),
-  })
+  }))
+  const { error } = await supabase.from('leaderboard').upsert(rows)
+  if (error) throw error
+}
+
+// Renames the student's alias across every one of their existing rows
+// (Overall + each exam type) without touching their score aggregates.
+export async function renameLeaderboardAlias(supabase: TypedClient, userId: string, alias: string): Promise<void> {
+  const { error } = await supabase.from('leaderboard').update({ alias }).eq('user_id', userId)
   if (error) throw error
 }
 

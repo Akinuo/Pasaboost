@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { Trophy, Crown, Star, TrendingUp, Info, Shield } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { createClient } from '@/lib/supabase/client'
-import { getLeaderboard, getUserScores } from '@/lib/queries'
+import { getLeaderboard, getUserScores, getProfile } from '@/lib/queries'
 import { getScoreColor, getRelativeTime } from '@/lib/utils'
 import type { LeaderboardEntry, ExamType } from '@/types'
 
@@ -30,9 +30,10 @@ export default function LeaderboardPage() {
     const supabase = createClient()
     if (!silent) setLoading(true)
 
-    const [lb, userScores] = await Promise.all([
+    const [lb, userScores, profile] = await Promise.all([
       getLeaderboard(supabase, activeExam, 20),
       user ? getUserScores(supabase, user.id, { examType: activeExam, limit: 50 }) : Promise.resolve([]),
+      user ? getProfile(supabase, user.id) : Promise.resolve(null),
     ])
 
     setEntries(lb)
@@ -41,7 +42,7 @@ export default function LeaderboardPage() {
     if (userScores.length > 0) {
       const avg = Math.round(userScores.reduce((s, e) => s + e.totalScore, 0) / userScores.length)
       setUserAvgScore(avg)
-      const rank = lb.findIndex((e) => e.alias === user?.user_metadata?.leaderboard_alias) + 1
+      const rank = lb.findIndex((e) => e.alias === profile?.leaderboardAlias) + 1
       setUserRank(rank > 0 ? rank : null)
     }
 
