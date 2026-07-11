@@ -25,7 +25,7 @@ export default function NotificationBell() {
   const [loading, setLoading] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
-  const [coords, setCoords] = useState({ top: 0, right: 0 })
+  const [coords, setCoords] = useState({ top: 0, left: 0 })
 
   const refreshUnreadCount = useCallback(async () => {
     if (!user) return
@@ -76,10 +76,23 @@ export default function NotificationBell() {
   // container it's rendered in (desktop sidebar is only 256px wide, the
   // panel is 320px) — position it via the viewport instead of relying on
   // CSS absolute positioning inside that container.
+  const PANEL_WIDTH = 320
+  const VIEWPORT_MARGIN = 16
+
   const updateCoords = useCallback(() => {
     if (!buttonRef.current) return
     const rect = buttonRef.current.getBoundingClientRect()
-    setCoords({ top: rect.bottom + 8, right: window.innerWidth - rect.right })
+    const effectiveWidth = Math.min(PANEL_WIDTH, window.innerWidth - VIEWPORT_MARGIN * 2)
+    // Prefer opening rightward from the button's left edge (correct when the
+    // bell sits near the left, e.g. the desktop sidebar) but clamp so it
+    // never runs past the right edge of the viewport (matters when the bell
+    // sits further right, e.g. the mobile header).
+    let left = rect.left
+    if (left + effectiveWidth > window.innerWidth - VIEWPORT_MARGIN) {
+      left = window.innerWidth - VIEWPORT_MARGIN - effectiveWidth
+    }
+    left = Math.max(left, VIEWPORT_MARGIN)
+    setCoords({ top: rect.bottom + 8, left })
   }, [])
 
   useEffect(() => {
@@ -131,7 +144,7 @@ export default function NotificationBell() {
         <motion.div
           ref={panelRef}
           className="fixed w-80 max-w-[calc(100vw-2rem)] bg-card border border-border rounded-lg shadow-lg z-50 overflow-hidden"
-          style={{ top: coords.top, right: coords.right }}
+          style={{ top: coords.top, left: coords.left }}
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}
