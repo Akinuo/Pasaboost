@@ -220,6 +220,38 @@ export interface IntegrityCheckResponse {
 }
 
 // ============================================================
+// Community — students sharing essays for peer feedback
+// ============================================================
+
+export interface CommunityPost {
+  id: string
+  userId: string
+  displayName: string // "Anonymous" is substituted client-side when isAnonymous is true
+  isAnonymous: boolean
+  title: string
+  essay: string
+  prompt?: string
+  examType: ExamType
+  scoreId?: string
+  totalScore?: number
+  likeCount: number
+  commentCount: number
+  likedByMe: boolean
+  isOwn: boolean
+  createdAt: Date
+}
+
+export interface CommunityComment {
+  id: string
+  postId: string
+  userId: string
+  displayName: string
+  content: string
+  isOwn: boolean
+  createdAt: Date
+}
+
+// ============================================================
 // Outline / brainstorm assistant
 // ============================================================
 

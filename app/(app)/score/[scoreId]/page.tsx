@@ -3,19 +3,24 @@
 import { use, useEffect, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { ArrowLeft, CheckCircle, XCircle, Lightbulb, ArrowUpDown, Star, PenLine, Share2, Download, ShieldCheck, ShieldAlert, ShieldQuestion, FileText, LayoutGrid, SpellCheck2, GitBranch, MessageSquareText } from 'lucide-react'
+import { ArrowLeft, CheckCircle, XCircle, Lightbulb, ArrowUpDown, Star, PenLine, Share2, Download, ShieldCheck, ShieldAlert, ShieldQuestion, FileText, LayoutGrid, SpellCheck2, GitBranch, MessageSquareText, Users } from 'lucide-react'
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, Tooltip } from 'recharts'
 import { createClient } from '@/lib/supabase/client'
-import { getScore } from '@/lib/queries'
+import { getScore, getProfile } from '@/lib/queries'
 import { getScoreColor, getScoreBgColor, getScoreLabel, getDimensionColor, formatDateTime } from '@/lib/utils'
 import { exportScoreToPDF } from '@/lib/pdfExport'
+import { useAuth } from '@/components/providers/AuthProvider'
+import SharePostModal from '@/components/community/SharePostModal'
 import type { EssayScore, RubricScore, GrammarIssue, ScoreDimension } from '@/types'
 
 export default function ScoreResultPage({ params }: { params: Promise<{ scoreId: string }> }) {
   const { scoreId } = use(params)
+  const { user } = useAuth()
   const [score, setScore] = useState<EssayScore | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'overview' | 'feedback' | 'rewrites' | 'essay' | 'integrity'>('overview')
+  const [shareModalOpen, setShareModalOpen] = useState(false)
+  const [displayName, setDisplayName] = useState('Student')
 
   useEffect(() => {
     const supabase = createClient()
@@ -24,6 +29,14 @@ export default function ScoreResultPage({ params }: { params: Promise<{ scoreId:
       setLoading(false)
     })
   }, [scoreId])
+
+  useEffect(() => {
+    if (!user) return
+    const supabase = createClient()
+    getProfile(supabase, user.id).then((p) => {
+      setDisplayName(p?.displayName || (user.user_metadata?.display_name as string) || user.email?.split('@')[0] || 'Student')
+    })
+  }, [user])
 
   if (loading) return <ScoreResultSkeleton />
   if (!score) {
@@ -398,12 +411,34 @@ export default function ScoreResultPage({ params }: { params: Promise<{ scoreId:
             <Share2 size={14} />
             Share
           </button>
+          <button onClick={() => setShareModalOpen(true)} className="flex items-center gap-2 px-4 py-2 text-sm border border-border rounded-lg bg-background hover:bg-accent transition-colors">
+            <Users size={14} />
+            Share to Community
+          </button>
         </div>
         <Link href="/editor" className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-colors text-sm">
           <PenLine size={15} />
           Write Another Essay
         </Link>
       </div>
+
+      {user && (
+        <SharePostModal
+          open={shareModalOpen}
+          onClose={() => setShareModalOpen(false)}
+          onShared={(postId) => { window.location.href = `/community/${postId}` }}
+          userId={user.id}
+          displayName={displayName}
+          defaults={{
+            title: score.prompt ? score.prompt.slice(0, 100) : 'My Essay',
+            essay: score.essay,
+            examType: score.examType,
+            prompt: score.prompt,
+            scoreId: score.id,
+            totalScore: score.totalScore,
+          }}
+        />
+      )}
     </div>
   )
 }

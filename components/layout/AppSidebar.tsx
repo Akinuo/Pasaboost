@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  LayoutDashboard, PenLine, History, BarChart3, Lightbulb, Trophy, User,
+  LayoutDashboard, PenLine, History, BarChart3, Lightbulb, Trophy, User, Users,
   LogOut, X, Sun, Moon, Monitor, ChevronDown,
 } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
@@ -18,6 +18,7 @@ const NAV_ITEMS = [
   { href: '/history', icon: History, label: 'My Essays' },
   { href: '/analytics', icon: BarChart3, label: 'Analytics' },
   { href: '/prompts', icon: Lightbulb, label: 'Prompts' },
+  { href: '/community', icon: Users, label: 'Community' },
   { href: '/leaderboard', icon: Trophy, label: 'Leaderboard' },
   { href: '/profile', icon: User, label: 'Profile' },
 ]

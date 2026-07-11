@@ -11,6 +11,7 @@ import { computeLeaderboardRows, OVERALL_LEADERBOARD_KEY } from '@/lib/utils'
 import type {
   EssayDraft, EssayScore, UserStats, UserProfile,
   LeaderboardEntry, ScoreDataPoint, ExamType, RubricScore, WritingPrompt,
+  CommunityPost, CommunityComment,
 } from '@/types'
 
 type TypedClient = SupabaseClient<Database>
@@ -390,4 +391,178 @@ export async function getDailyGeneratedPrompts(supabase: TypedClient, limit = 20
     isDaily: true,
     date: row.generated_date,
   }))
+}
+
+// ============================================================
+// Community — shared essays, likes, comments
+// ============================================================
+
+function rowToCommunityPost(
+  row: Database['public']['Tables']['community_posts']['Row'],
+  currentUserId: string,
+  likedPostIds: Set<string>
+): CommunityPost {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    displayName: row.is_anonymous ? 'Anonymous' : row.display_name,
+    isAnonymous: row.is_anonymous,
+    title: row.title,
+    essay: row.essay,
+    prompt: row.prompt ?? undefined,
+    examType: row.exam_type as ExamType,
+    scoreId: row.score_id ?? undefined,
+    totalScore: row.total_score ?? undefined,
+    likeCount: row.like_count,
+    commentCount: row.comment_count,
+    likedByMe: likedPostIds.has(row.id),
+    isOwn: row.user_id === currentUserId,
+    createdAt: new Date(row.created_at ?? Date.now()),
+  }
+}
+
+/**
+ * Fetches the community feed plus, in one extra query, which of those
+ * posts the current user has already liked — so the like button can
+ * render correctly on first paint without an extra round-trip.
+ */
+export async function getCommunityPosts(
+  supabase: TypedClient,
+  currentUserId: string,
+  options?: { examType?: ExamType; limit?: number }
+): Promise<CommunityPost[]> {
+  let query = supabase
+    .from('community_posts')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(options?.limit ?? 50)
+
+  if (options?.examType) {
+    query = query.eq('exam_type', options.examType)
+  }
+
+  const { data, error } = await query
+  if (error || !data) return []
+
+  const postIds = data.map((r) => r.id)
+  let likedPostIds = new Set<string>()
+  if (postIds.length > 0) {
+    const { data: likes } = await supabase
+      .from('community_likes')
+      .select('post_id')
+      .eq('user_id', currentUserId)
+      .in('post_id', postIds)
+    likedPostIds = new Set((likes ?? []).map((l) => l.post_id))
+  }
+
+  return data.map((row) => rowToCommunityPost(row, currentUserId, likedPostIds))
+}
+
+export async function getCommunityPost(
+  supabase: TypedClient,
+  postId: string,
+  currentUserId: string
+): Promise<CommunityPost | null> {
+  const { data, error } = await supabase.from('community_posts').select('*').eq('id', postId).single()
+  if (error || !data) return null
+
+  const { data: like } = await supabase
+    .from('community_likes')
+    .select('id')
+    .eq('post_id', postId)
+    .eq('user_id', currentUserId)
+    .maybeSingle()
+
+  return rowToCommunityPost(data, currentUserId, new Set(like ? [postId] : []))
+}
+
+export async function createCommunityPost(
+  supabase: TypedClient,
+  post: {
+    userId: string
+    displayName: string
+    isAnonymous: boolean
+    title: string
+    essay: string
+    examType: ExamType
+    prompt?: string
+    scoreId?: string
+    totalScore?: number
+  }
+): Promise<string> {
+  const { data, error } = await supabase
+    .from('community_posts')
+    .insert({
+      user_id: post.userId,
+      display_name: post.displayName,
+      is_anonymous: post.isAnonymous,
+      title: post.title,
+      essay: post.essay,
+      exam_type: post.examType,
+      prompt: post.prompt,
+      score_id: post.scoreId,
+      total_score: post.totalScore,
+    })
+    .select('id')
+    .single()
+
+  if (error || !data) throw error ?? new Error('Failed to share essay')
+  return data.id
+}
+
+export async function deleteCommunityPost(supabase: TypedClient, postId: string): Promise<void> {
+  const { error } = await supabase.from('community_posts').delete().eq('id', postId)
+  if (error) throw error
+}
+
+export async function likeCommunityPost(supabase: TypedClient, postId: string, userId: string): Promise<void> {
+  const { error } = await supabase.from('community_likes').insert({ post_id: postId, user_id: userId })
+  // Ignore duplicate-like races (unique constraint) — end state is the same either way.
+  if (error && error.code !== '23505') throw error
+}
+
+export async function unlikeCommunityPost(supabase: TypedClient, postId: string, userId: string): Promise<void> {
+  const { error } = await supabase.from('community_likes').delete().eq('post_id', postId).eq('user_id', userId)
+  if (error) throw error
+}
+
+export async function getCommunityComments(supabase: TypedClient, postId: string, currentUserId: string): Promise<CommunityComment[]> {
+  const { data, error } = await supabase
+    .from('community_comments')
+    .select('*')
+    .eq('post_id', postId)
+    .order('created_at', { ascending: true })
+  if (error || !data) return []
+  return data.map((row) => ({
+    id: row.id,
+    postId: row.post_id,
+    userId: row.user_id,
+    displayName: row.display_name,
+    content: row.content,
+    isOwn: row.user_id === currentUserId,
+    createdAt: new Date(row.created_at ?? Date.now()),
+  }))
+}
+
+export async function addCommunityComment(
+  supabase: TypedClient,
+  comment: { postId: string; userId: string; displayName: string; content: string }
+): Promise<string> {
+  const { data, error } = await supabase
+    .from('community_comments')
+    .insert({
+      post_id: comment.postId,
+      user_id: comment.userId,
+      display_name: comment.displayName,
+      content: comment.content,
+    })
+    .select('id')
+    .single()
+  if (error || !data) throw error ?? new Error('Failed to post comment')
+  return data.id
+}
+
+export async function deleteCommunityComment(supabase: TypedClient, commentId: string): Promise<void> {
+  const { error } = await supabase.from('community_comments').delete().eq('id', commentId)
+  if (error) throw error
 }

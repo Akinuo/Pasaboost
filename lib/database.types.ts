@@ -39,6 +39,126 @@ export type Database = {
   }
   public: {
     Tables: {
+      community_comments: {
+        Row: {
+          content: string
+          created_at: string | null
+          display_name: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          display_name: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          display_name?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_likes: {
+        Row: {
+          created_at: string | null
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_posts: {
+        Row: {
+          comment_count: number
+          created_at: string | null
+          display_name: string
+          essay: string
+          exam_type: string
+          id: string
+          is_anonymous: boolean
+          like_count: number
+          prompt: string | null
+          score_id: string | null
+          title: string
+          total_score: number | null
+          user_id: string
+        }
+        Insert: {
+          comment_count?: number
+          created_at?: string | null
+          display_name: string
+          essay: string
+          exam_type?: string
+          id?: string
+          is_anonymous?: boolean
+          like_count?: number
+          prompt?: string | null
+          score_id?: string | null
+          title?: string
+          total_score?: number | null
+          user_id: string
+        }
+        Update: {
+          comment_count?: number
+          created_at?: string | null
+          display_name?: string
+          essay?: string
+          exam_type?: string
+          id?: string
+          is_anonymous?: boolean
+          like_count?: number
+          prompt?: string | null
+          score_id?: string | null
+          title?: string
+          total_score?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_posts_score_id_fkey"
+            columns: ["score_id"]
+            isOneToOne: false
+            referencedRelation: "scores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_prompts: {
         Row: {
           category: string
