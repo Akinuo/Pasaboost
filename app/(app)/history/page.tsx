@@ -3,11 +3,12 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Search, Filter, Clock, ChevronRight, FileText, PenLine } from 'lucide-react'
+import { Search, Filter, Clock, ChevronRight, FileText, PenLine, Download } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { createClient } from '@/lib/supabase/client'
 import { getUserScores } from '@/lib/queries'
 import { getScoreColor, getScoreBgColor, getScoreLabel, formatDate, EXAM_COLORS, truncateText } from '@/lib/utils'
+import { exportPortfolioToPDF } from '@/lib/pdfExport'
 import type { EssayScore, ExamType } from '@/types'
 
 const EXAM_FILTERS: Array<ExamType | 'All'> = ['All', 'UPCAT', 'ACET', 'DCAT', 'USTET', 'General']
@@ -50,13 +51,31 @@ export default function HistoryPage() {
       return a.totalScore - b.totalScore
     })
 
+  const handleExportPortfolio = () => {
+    if (filtered.length === 0) return
+    const studentName = (user?.user_metadata?.display_name as string | undefined) || undefined
+    exportPortfolioToPDF(filtered, studentName)
+  }
+
   if (loading) return <HistorySkeleton />
 
   return (
     <div>
-      <div className="page-header">
-        <h1 className="page-title">My Essays</h1>
-        <p className="page-subtitle">{scores.length} scored essay{scores.length !== 1 ? 's' : ''}</p>
+      <div className="page-header flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="page-title">My Essays</h1>
+          <p className="page-subtitle">{scores.length} scored essay{scores.length !== 1 ? 's' : ''}</p>
+        </div>
+        {scores.length > 0 && (
+          <button
+            onClick={handleExportPortfolio}
+            title="Export a printable PDF of the essays currently shown below"
+            className="flex items-center gap-2 px-4 py-2.5 text-sm border border-border rounded-lg bg-background hover:bg-accent transition-colors flex-shrink-0"
+          >
+            <Download size={15} />
+            Export Portfolio
+          </button>
+        )}
       </div>
 
       {scores.length === 0 ? (

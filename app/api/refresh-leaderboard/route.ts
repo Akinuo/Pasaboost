@@ -28,7 +28,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceRoleClient } from '@/lib/supabase/server'
-import { computeLeaderboardRows, OVERALL_LEADERBOARD_KEY } from '@/lib/utils'
+import { computeLeaderboardRows, OVERALL_LEADERBOARD_KEY, BADGE_LABELS, type LeaderboardRowInput } from '@/lib/utils'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -99,6 +99,18 @@ async function handleRefresh(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ success: false, error: 'Database error loading scores.' }, { status: 500 })
   }
 
+  // 3b. Pull current streaks for the same users — feeds the streak badges
+  //     (7-Day / 30-Day) in computeLeaderboardRows below.
+  const { data: statsRows } = await supabase
+    .from('user_stats')
+    .select('user_id, current_streak')
+    .in('user_id', userIds)
+
+  const streakByUser = new Map<string, number>()
+  for (const s of statsRows ?? []) {
+    if (s.current_streak != null) streakByUser.set(s.user_id, s.current_streak)
+  }
+
   const byUser = new Map<string, ScoreRow[]>()
   for (const s of (scores ?? []) as ScoreRow[]) {
     const list = byUser.get(s.user_id) ?? []
@@ -108,18 +120,42 @@ async function handleRefresh(req: NextRequest): Promise<NextResponse> {
 
   // 4. Recompute Overall + one row per exam type actually present in each
   //    user's scores. This naturally creates any missing exam-type rows
-  //    (the backfill) and refreshes existing ones in the same pass.
-  const updates = rows.flatMap((row) => {
+  //    (the backfill) and refreshes existing ones in the same pass, and
+  //    assigns each row's individual badge (streak / first-90 / big-improver).
+  const updates: LeaderboardRowInput[] = rows.flatMap((row) => {
     const userScores = byUser.get(row.user_id) ?? []
     const rowsForUser = computeLeaderboardRows(
       row.user_id,
       row.alias,
-      userScores.map((s) => ({ totalScore: s.total_score, examType: s.exam_type }))
+      userScores.map((s) => ({ totalScore: s.total_score, examType: s.exam_type })),
+      streakByUser.get(row.user_id)
     )
-    return rowsForUser.map((r) => ({ ...r, last_updated: new Date().toISOString() }))
+    return rowsForUser
   })
 
-  const { error: upsertError } = await supabase.from('leaderboard').upsert(updates)
+  // 5. "Most Improved This Week" is comparative rather than a per-user
+  //    threshold, so it's decided here across the whole batch: within each
+  //    exam-type bucket (including Overall), whoever has the single highest
+  //    positive improvement gets that badge, overriding whatever individual
+  //    badge they would've otherwise gotten.
+  const byBucket = new Map<string, LeaderboardRowInput[]>()
+  for (const row of updates) {
+    const list = byBucket.get(row.exam_type) ?? []
+    list.push(row)
+    byBucket.set(row.exam_type, list)
+  }
+  for (const bucketRows of byBucket.values()) {
+    let winner: LeaderboardRowInput | null = null
+    for (const row of bucketRows) {
+      if (row.improvement > 0 && (!winner || row.improvement > winner.improvement)) {
+        winner = row
+      }
+    }
+    if (winner) winner.badge = BADGE_LABELS.mostImproved
+  }
+
+  const finalRows = updates.map((r) => ({ ...r, last_updated: new Date().toISOString() }))
+  const { error: upsertError } = await supabase.from('leaderboard').upsert(finalRows)
 
   if (upsertError) {
     console.error('refresh-leaderboard: upsert failed:', upsertError.message)
@@ -129,7 +165,7 @@ async function handleRefresh(req: NextRequest): Promise<NextResponse> {
   return NextResponse.json({
     success: true,
     usersRefreshed: rows.length,
-    rowsUpserted: updates.length,
+    rowsUpserted: finalRows.length,
     cleaned: optedOut?.length ?? 0,
     timestamp: new Date().toISOString(),
   })

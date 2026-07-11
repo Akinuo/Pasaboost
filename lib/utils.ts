@@ -272,6 +272,7 @@ export interface LeaderboardRowInput {
   essay_count: number
   best_score: number
   improvement: number
+  badge?: string
 }
 
 // Recent-half vs. earlier-half average, so "improvement" reflects a
@@ -285,28 +286,66 @@ export function computeImprovement(totalsOldestFirst: number[]): number {
   return Math.round(avg(recent) - avg(earlier))
 }
 
-function aggregateOne(userId: string, alias: string, examType: string, totalsOldestFirst: number[]): LeaderboardRowInput {
+// ============================================================
+// Achievement badges
+// A single badge label per leaderboard row (Overall + one per exam
+// type), assigned by priority so the most impressive thing a student
+// has earned is what shows. "Most Improved This Week" isn't decided
+// here — it's comparative across students, so refresh-leaderboard
+// overrides the winner's badge for each exam-type bucket after all
+// rows in a batch have been computed (see BADGE_LABELS.mostImproved).
+// ============================================================
+
+export const BADGE_LABELS = {
+  streak30: '🔥 30-Day Streak',
+  streak7: '🔥 7-Day Streak',
+  first90: '⭐ First 90+',
+  bigImprover: '📈 Big Improver',
+  mostImproved: '🏆 Most Improved This Week',
+} as const
+
+function computeBadge(bestScore: number, improvement: number, currentStreak?: number): string | undefined {
+  if (currentStreak != null && currentStreak >= 30) return BADGE_LABELS.streak30
+  if (currentStreak != null && currentStreak >= 7) return BADGE_LABELS.streak7
+  if (bestScore >= 90) return BADGE_LABELS.first90
+  if (improvement >= 10) return BADGE_LABELS.bigImprover
+  return undefined
+}
+
+function aggregateOne(
+  userId: string,
+  alias: string,
+  examType: string,
+  totalsOldestFirst: number[],
+  currentStreak?: number
+): LeaderboardRowInput {
   const essayCount = totalsOldestFirst.length
+  const bestScore = essayCount ? Math.max(...totalsOldestFirst) : 0
+  const improvement = computeImprovement(totalsOldestFirst)
   return {
     user_id: userId,
     alias,
     exam_type: examType,
     average_score: essayCount ? Math.round(totalsOldestFirst.reduce((s, v) => s + v, 0) / essayCount) : 0,
     essay_count: essayCount,
-    best_score: essayCount ? Math.max(...totalsOldestFirst) : 0,
-    improvement: computeImprovement(totalsOldestFirst),
+    best_score: bestScore,
+    improvement,
+    badge: essayCount ? computeBadge(bestScore, improvement, currentStreak) : undefined,
   }
 }
 
 // Builds one "Overall" row plus one row per exam type the student has
 // at least one score for. `scoresOldestFirst` must be sorted oldest
 // first so improvement can compare early vs. recent attempts correctly.
+// `currentStreak` (from user_stats) feeds the streak badges — optional
+// since not every caller has it handy.
 export function computeLeaderboardRows(
   userId: string,
   alias: string,
-  scoresOldestFirst: Array<{ totalScore: number; examType: string }>
+  scoresOldestFirst: Array<{ totalScore: number; examType: string }>,
+  currentStreak?: number
 ): LeaderboardRowInput[] {
-  const overall = aggregateOne(userId, alias, OVERALL_LEADERBOARD_KEY, scoresOldestFirst.map((s) => s.totalScore))
+  const overall = aggregateOne(userId, alias, OVERALL_LEADERBOARD_KEY, scoresOldestFirst.map((s) => s.totalScore), currentStreak)
 
   const byExam = new Map<string, number[]>()
   for (const s of scoresOldestFirst) {
@@ -315,7 +354,7 @@ export function computeLeaderboardRows(
     byExam.set(s.examType, list)
   }
 
-  const perExam = Array.from(byExam.entries()).map(([examType, totals]) => aggregateOne(userId, alias, examType, totals))
+  const perExam = Array.from(byExam.entries()).map(([examType, totals]) => aggregateOne(userId, alias, examType, totals, currentStreak))
 
   return [overall, ...perExam]
 }

@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { createClient } from '@/lib/supabase/client'
-import { saveDraft, updateDraft, getUserDrafts, deleteDraft, getDraft, getProfile, getUserScores, syncLeaderboardEntries } from '@/lib/queries'
+import { saveDraft, updateDraft, getUserDrafts, deleteDraft, getDraft, getProfile, getUserScores, getUserStats, syncLeaderboardEntries } from '@/lib/queries'
 import { scoreEssayViaAPI, generateMockScore } from '@/lib/scoreApi'
 import { checkIntegrityViaAPI } from '@/lib/integrityApi'
 import { generateOutlineViaAPI } from '@/lib/outlineApi'
@@ -368,7 +368,8 @@ function EssayEditorInner() {
         if (profile?.leaderboardEnabled && profile.leaderboardAlias) {
           const allScores = await getUserScores(supabase, user.id, { limit: 200 })
           const oldestFirst = [...allScores].reverse().map((s) => ({ totalScore: s.totalScore, examType: s.examType }))
-          await syncLeaderboardEntries(supabase, user.id, profile.leaderboardAlias, oldestFirst)
+          const stats = await getUserStats(supabase, user.id)
+          await syncLeaderboardEntries(supabase, user.id, profile.leaderboardAlias, oldestFirst, stats?.currentStreak)
         }
       } catch (syncErr) {
         console.error('Leaderboard sync failed (non-fatal):', syncErr)
