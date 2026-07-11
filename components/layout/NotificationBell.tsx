@@ -45,7 +45,7 @@ export default function NotificationBell() {
   // Initial unread count, and whenever the user changes.
   useEffect(() => { refreshUnreadCount() }, [refreshUnreadCount])
 
-  // Poll for new notifications every 5 minutes instead of holding open a
+  // Poll for new notifications every minute instead of holding open a
   // realtime WebSocket subscription. Refreshes the badge count always, and
   // the list too if the panel happens to be open.
   useEffect(() => {
@@ -53,7 +53,7 @@ export default function NotificationBell() {
     const interval = setInterval(() => {
       refreshUnreadCount()
       if (open) loadNotifications()
-    }, 5 * 60 * 1000)
+    }, 60 * 1000)
     return () => clearInterval(interval)
   }, [user, open, refreshUnreadCount, loadNotifications])
 
