@@ -88,6 +88,7 @@ export function generateMockScore(
     essay,
     prompt,
     examType,
+    examMode: false,
     totalScore,
     rubricScores,
     overallFeedback: generateOverallFeedback(totalScore, examType),

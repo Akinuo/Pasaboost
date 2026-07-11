@@ -79,6 +79,8 @@ export type Database = {
         Row: {
           content: string
           created_at: string | null
+          exam_mode_started_at: string | null
+          exam_mode_time_limit_seconds: number | null
           exam_type: string
           id: string
           is_submitted: boolean | null
@@ -93,6 +95,8 @@ export type Database = {
         Insert: {
           content?: string
           created_at?: string | null
+          exam_mode_started_at?: string | null
+          exam_mode_time_limit_seconds?: number | null
           exam_type?: string
           id?: string
           is_submitted?: boolean | null
@@ -107,6 +111,8 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string | null
+          exam_mode_started_at?: string | null
+          exam_mode_time_limit_seconds?: number | null
           exam_type?: string
           id?: string
           is_submitted?: boolean | null
@@ -196,6 +202,7 @@ export type Database = {
           essay: string
           essay_id: string | null
           estimated_band: string | null
+          exam_mode: boolean
           exam_type: string
           grammar_issues: Json | null
           id: string
@@ -214,6 +221,8 @@ export type Database = {
           rubric_scores: Json
           strengths: Json | null
           suggestions: Json | null
+          time_limit_seconds: number | null
+          time_taken_seconds: number | null
           total_score: number
           user_id: string
           vocabulary_diversity: number | null
@@ -228,6 +237,7 @@ export type Database = {
           essay: string
           essay_id?: string | null
           estimated_band?: string | null
+          exam_mode?: boolean
           exam_type: string
           grammar_issues?: Json | null
           id?: string
@@ -246,6 +256,8 @@ export type Database = {
           rubric_scores: Json
           strengths?: Json | null
           suggestions?: Json | null
+          time_limit_seconds?: number | null
+          time_taken_seconds?: number | null
           total_score: number
           user_id: string
           vocabulary_diversity?: number | null
@@ -260,6 +272,7 @@ export type Database = {
           essay?: string
           essay_id?: string | null
           estimated_band?: string | null
+          exam_mode?: boolean
           exam_type?: string
           grammar_issues?: Json | null
           id?: string
@@ -278,6 +291,8 @@ export type Database = {
           rubric_scores?: Json
           strengths?: Json | null
           suggestions?: Json | null
+          time_limit_seconds?: number | null
+          time_taken_seconds?: number | null
           total_score?: number
           user_id?: string
           vocabulary_diversity?: number | null

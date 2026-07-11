@@ -33,6 +33,8 @@ function rowToDraft(row: Database['public']['Tables']['drafts']['Row']): EssayDr
     updatedAt: new Date(row.updated_at ?? row.created_at ?? Date.now()),
     isSubmitted: row.is_submitted ?? false,
     scoreId: row.score_id ?? undefined,
+    examModeStartedAt: row.exam_mode_started_at ? new Date(row.exam_mode_started_at) : undefined,
+    examModeTimeLimitSeconds: row.exam_mode_time_limit_seconds ?? undefined,
   }
 }
 
@@ -72,6 +74,9 @@ function rowToScore(row: Database['public']['Tables']['scores']['Row']): EssaySc
     } : undefined,
     aiPenaltyApplied: (row as any).ai_penalty_applied ?? undefined,
     preAIPenaltyScore: (row as any).pre_ai_penalty_score ?? undefined,
+    examMode: (row as any).exam_mode ?? false,
+    timeLimitSeconds: (row as any).time_limit_seconds ?? undefined,
+    timeTakenSeconds: (row as any).time_taken_seconds ?? undefined,
   }
 }
 
@@ -149,6 +154,8 @@ export async function saveDraft(
     prompt?: string
     wordCount: number
     isSubmitted?: boolean
+    examModeStartedAt?: Date | null
+    examModeTimeLimitSeconds?: number | null
   }
 ): Promise<string> {
   const { data, error } = await supabase
@@ -161,6 +168,8 @@ export async function saveDraft(
       prompt: draft.prompt,
       word_count: draft.wordCount,
       is_submitted: draft.isSubmitted ?? false,
+      exam_mode_started_at: draft.examModeStartedAt ? draft.examModeStartedAt.toISOString() : undefined,
+      exam_mode_time_limit_seconds: draft.examModeTimeLimitSeconds ?? undefined,
     })
     .select('id')
     .single()
@@ -179,6 +188,8 @@ export async function updateDraft(
     prompt: string
     wordCount: number
     isSubmitted: boolean
+    examModeStartedAt: Date | null
+    examModeTimeLimitSeconds: number | null
   }>
 ): Promise<void> {
   const { error } = await supabase
@@ -190,6 +201,8 @@ export async function updateDraft(
       ...(updates.prompt !== undefined && { prompt: updates.prompt }),
       ...(updates.wordCount !== undefined && { word_count: updates.wordCount }),
       ...(updates.isSubmitted !== undefined && { is_submitted: updates.isSubmitted }),
+      ...(updates.examModeStartedAt !== undefined && { exam_mode_started_at: updates.examModeStartedAt ? updates.examModeStartedAt.toISOString() : null }),
+      ...(updates.examModeTimeLimitSeconds !== undefined && { exam_mode_time_limit_seconds: updates.examModeTimeLimitSeconds }),
     })
     .eq('id', draftId)
   if (error) throw error

@@ -52,6 +52,8 @@ export interface EssayDraft {
   updatedAt: Date
   isSubmitted: boolean
   scoreId?: string
+  examModeStartedAt?: Date
+  examModeTimeLimitSeconds?: number
 }
 
 export type ScoreDimension = 'Content' | 'Organization' | 'Grammar' | 'Coherence' | 'Argument'
@@ -103,6 +105,9 @@ export interface EssayScore {
   originality?: OriginalityResult
   aiPenaltyApplied?: number // points deducted from totalScore because aiDetection.likelihood >= 60
   preAIPenaltyScore?: number // the totalScore before the AI-likelihood deduction was applied
+  examMode: boolean // whether this was written under Timed Exam Mode
+  timeLimitSeconds?: number // the limit that was set for the attempt
+  timeTakenSeconds?: number // how long the student actually took (capped at timeLimitSeconds)
 }
 
 export interface ScoreDataPoint {

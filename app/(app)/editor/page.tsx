@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Save, Send, Trash2, ChevronDown, Clock, FileText, Lightbulb,
   AlertCircle, CheckCircle, Loader2, RotateCcw, ShieldCheck,
-  Sparkles, X, ScanSearch, SpellCheck2,
+  Sparkles, X, ScanSearch, SpellCheck2, Timer, Play,
 } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { createClient } from '@/lib/supabase/client'
@@ -16,7 +16,7 @@ import { checkIntegrityViaAPI } from '@/lib/integrityApi'
 import { generateOutlineViaAPI } from '@/lib/outlineApi'
 import { checkGrammarViaAPI } from '@/lib/grammarApi'
 import GrammarHighlightedTextarea from '@/components/editor/GrammarHighlightedTextarea'
-import { countWords, debounce, EXAM_DESCRIPTIONS, getAIPenalty, getScoreBand } from '@/lib/utils'
+import { countWords, debounce, EXAM_DESCRIPTIONS, getAIPenalty, getScoreBand, SUGGESTED_EXAM_TIME_MINUTES, formatTimer } from '@/lib/utils'
 import type { ExamType, EssayDraft, AIDetectionResult, OriginalityResult, EssayOutline, GrammarIssue } from '@/types'
 
 const EXAM_TYPES: ExamType[] = ['UPCAT', 'ACET', 'DCAT', 'USTET', 'General']
@@ -63,8 +63,21 @@ function EssayEditorInner() {
   const [grammarError, setGrammarError] = useState<string | null>(null)
   const [grammarChecked, setGrammarChecked] = useState(false)
 
+  // Timed Exam Mode
+  const [examModeSetupOpen, setExamModeSetupOpen] = useState(false)
+  const [examModeActive, setExamModeActive] = useState(false)
+  const [examTimeLimitMinutes, setExamTimeLimitMinutes] = useState<number>(SUGGESTED_EXAM_TIME_MINUTES[examType] ?? 30)
+  const [examStartedAt, setExamStartedAt] = useState<Date | null>(null)
+  const [timeRemainingSec, setTimeRemainingSec] = useState<number | null>(null)
+  const [examTimeUp, setExamTimeUp] = useState(false)
+  const autoSubmitTriggeredRef = useRef(false)
+
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const wordCount = countWords(content)
+  // True only while the clock is actually running — once time's up,
+  // controls unlock again even if there wasn't enough content to
+  // auto-submit, so a student is never stuck unable to start over.
+  const examLocked = examModeActive && !examTimeUp
   const charCount = content.length
 
   useEffect(() => {
@@ -75,6 +88,13 @@ function EssayEditorInner() {
         setContent(draft.content)
         setExamType(draft.examType)
         setPrompt(draft.prompt || '')
+
+        if (draft.examModeStartedAt && draft.examModeTimeLimitSeconds) {
+          setExamStartedAt(draft.examModeStartedAt)
+          setExamTimeLimitMinutes(draft.examModeTimeLimitSeconds / 60)
+          setExamModeSetupOpen(true)
+          setExamModeActive(true)
+        }
       }
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -122,6 +142,29 @@ function EssayEditorInner() {
       textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px'
     }
   }, [content])
+
+  // Countdown tick — anchored to examStartedAt (a real timestamp, persisted
+  // to the draft) rather than counting down a plain number, so the
+  // remaining time survives refreshes/tab closes without drifting or
+  // resetting.
+  useEffect(() => {
+    if (!examModeActive || !examStartedAt) return
+    const limitSec = examTimeLimitMinutes * 60
+
+    const tick = () => {
+      const elapsed = (Date.now() - examStartedAt.getTime()) / 1000
+      const remaining = Math.max(0, limitSec - elapsed)
+      setTimeRemainingSec(remaining)
+      if (remaining <= 0 && !autoSubmitTriggeredRef.current) {
+        autoSubmitTriggeredRef.current = true
+        setExamTimeUp(true)
+      }
+    }
+
+    tick()
+    const interval = setInterval(tick, 1000)
+    return () => clearInterval(interval)
+  }, [examModeActive, examStartedAt, examTimeLimitMinutes])
 
   const handleManualSave = async () => {
     if (!user || !content.trim()) return
@@ -233,10 +276,15 @@ function EssayEditorInner() {
     setGrammarIssues((prev) => prev.filter((i) => !i.replacement))
   }
 
-  const handleSubmit = async () => {
-    if (!user || wordCount < MIN_WORDS) return
+  const handleSubmit = async (opts?: { force?: boolean }) => {
+    const force = opts?.force ?? false
+    if (!user || (wordCount < MIN_WORDS && !force)) return
     setIsSubmitting(true)
     setSubmitError(null)
+
+    const timeTakenSeconds = examModeActive && examStartedAt
+      ? Math.min(examTimeLimitMinutes * 60, (Date.now() - examStartedAt.getTime()) / 1000)
+      : undefined
 
     try {
       // Try the real backend (Next.js API route → Groq) first.
@@ -302,6 +350,9 @@ function EssayEditorInner() {
           originality_similarity_percent: integrity?.originality?.similarityPercent,
           pre_ai_penalty_score: aiPenaltyApplied > 0 ? preAIPenaltyScore : null,
           ai_penalty_applied: aiPenaltyApplied,
+          exam_mode: examModeActive,
+          time_limit_seconds: examModeActive ? examTimeLimitMinutes * 60 : null,
+          time_taken_seconds: timeTakenSeconds != null ? Math.round(timeTakenSeconds) : null,
         } as any)
         .select('id')
         .single()
@@ -338,6 +389,50 @@ function EssayEditorInner() {
     router.push('/history')
   }
 
+  // Fires exactly once (guarded by autoSubmitTriggeredRef in the tick
+  // effect) when the exam clock reaches zero. Below 10 words there's
+  // nothing meaningful to score, so the UI just shows a "time's up"
+  // state instead of calling the scoring API.
+  useEffect(() => {
+    if (!examTimeUp) return
+    if (wordCount >= 10) {
+      ;(async () => {
+        await handleSubmit({ force: true })
+      })()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [examTimeUp])
+
+  const handleStartExam = async () => {
+    if (!user) return
+    const limitSeconds = Math.max(60, Math.round(examTimeLimitMinutes * 60))
+    const startedAt = new Date()
+    autoSubmitTriggeredRef.current = false
+    setExamStartedAt(startedAt)
+    setExamModeActive(true)
+    setExamTimeUp(false)
+
+    // Persist immediately so a refresh resumes the real remaining time
+    // instead of losing the session or restarting the clock.
+    try {
+      if (currentDraftId) {
+        await updateDraft(supabase, currentDraftId, {
+          examModeStartedAt: startedAt,
+          examModeTimeLimitSeconds: limitSeconds,
+          title, content, examType, prompt, wordCount,
+        })
+      } else {
+        const id = await saveDraft(supabase, {
+          userId: user.id, title, content, examType, prompt, wordCount,
+          examModeStartedAt: startedAt, examModeTimeLimitSeconds: limitSeconds,
+        })
+        setCurrentDraftId(id)
+      }
+    } catch {
+      // Non-fatal — the clock still runs client-side even if this write failed.
+    }
+  }
+
   const handleLoadDraft = (draft: EssayDraft) => {
     setTitle(draft.title)
     setContent(draft.content)
@@ -348,6 +443,21 @@ function EssayEditorInner() {
     setGrammarIssues([])
     setGrammarChecked(false)
     setGrammarError(null)
+
+    if (draft.examModeStartedAt && draft.examModeTimeLimitSeconds) {
+      autoSubmitTriggeredRef.current = false
+      setExamStartedAt(draft.examModeStartedAt)
+      setExamTimeLimitMinutes(draft.examModeTimeLimitSeconds / 60)
+      setExamModeSetupOpen(true)
+      setExamModeActive(true)
+      setExamTimeUp(false)
+    } else {
+      setExamModeActive(false)
+      setExamModeSetupOpen(false)
+      setExamStartedAt(null)
+      setTimeRemainingSec(null)
+      setExamTimeUp(false)
+    }
   }
 
   const handleClearEditor = () => {
@@ -360,6 +470,12 @@ function EssayEditorInner() {
     setGrammarIssues([])
     setGrammarChecked(false)
     setGrammarError(null)
+    autoSubmitTriggeredRef.current = false
+    setExamModeActive(false)
+    setExamModeSetupOpen(false)
+    setExamStartedAt(null)
+    setTimeRemainingSec(null)
+    setExamTimeUp(false)
   }
 
   return (
@@ -367,14 +483,32 @@ function EssayEditorInner() {
       <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
         <div className="flex items-center gap-3 flex-wrap">
           <div className="relative">
-            <select value={examType} onChange={(e) => setExamType(e.target.value as ExamType)} className="appearance-none pl-3 pr-8 py-2 text-sm font-medium rounded-lg border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer">
+            <select
+              value={examType}
+              disabled={examLocked}
+              onChange={(e) => {
+                const next = e.target.value as ExamType
+                setExamType(next)
+                setExamTimeLimitMinutes(SUGGESTED_EXAM_TIME_MINUTES[next] ?? 30)
+              }}
+              className="appearance-none pl-3 pr-8 py-2 text-sm font-medium rounded-lg border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            >
               {EXAM_TYPES.map((et) => <option key={et} value={et}>{et}</option>)}
             </select>
             <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
           </div>
 
+          <button
+            onClick={() => setExamModeSetupOpen(!examModeSetupOpen)}
+            disabled={examLocked}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border border-input bg-background hover:bg-accent transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            <Timer size={14} />
+            Timed Exam Mode
+          </button>
+
           <div className="relative">
-            <button onClick={() => setShowDrafts(!showDrafts)} className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border border-input bg-background hover:bg-accent transition-colors">
+            <button onClick={() => setShowDrafts(!showDrafts)} disabled={examLocked} className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border border-input bg-background hover:bg-accent transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
               <FileText size={14} />
               Drafts ({drafts.length})
               <ChevronDown size={13} className={`transition-transform ${showDrafts ? 'rotate-180' : ''}`} />
@@ -424,13 +558,13 @@ function EssayEditorInner() {
             <span className="hidden sm:inline">Save</span>
           </button>
 
-          <button onClick={handleCheckIntegrity} disabled={wordCount < MIN_WORDS} className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border border-input bg-background hover:bg-accent transition-colors disabled:opacity-40" title="Check for AI-generated text and compare against your past essays">
+          <button onClick={handleCheckIntegrity} disabled={wordCount < MIN_WORDS || examLocked} className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border border-input bg-background hover:bg-accent transition-colors disabled:opacity-40" title={examLocked ? "Not available during a timed exam — you won't have this in the real room either" : 'Check for AI-generated text and compare against your past essays'}>
             <ScanSearch size={14} />
             <span className="hidden sm:inline">Check AI / Originality</span>
             <span className="sm:hidden">AI Check</span>
           </button>
 
-          <button onClick={handleCheckGrammar} disabled={wordCount < MIN_WORDS || grammarLoading} className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border border-input bg-background hover:bg-accent transition-colors disabled:opacity-40" title="Check grammar and style, then click highlighted text to fix">
+          <button onClick={handleCheckGrammar} disabled={wordCount < MIN_WORDS || grammarLoading || examLocked} className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border border-input bg-background hover:bg-accent transition-colors disabled:opacity-40" title={examLocked ? "Not available during a timed exam — you won't have this in the real room either" : 'Check grammar and style, then click highlighted text to fix'}>
             {grammarLoading ? <Loader2 size={14} className="animate-spin" /> : <SpellCheck2 size={14} />}
             <span className="hidden sm:inline">Check Grammar</span>
             <span className="sm:hidden">Grammar</span>
@@ -445,11 +579,80 @@ function EssayEditorInner() {
             </button>
           )}
 
-          <button onClick={handleSubmit} disabled={isSubmitting || wordCount < MIN_WORDS} className="glow-primary flex items-center gap-2 px-5 py-2 text-sm font-semibold bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all disabled:opacity-50">
-            {isSubmitting ? (<><Loader2 size={14} className="animate-spin" />Scoring…</>) : (<><Send size={14} />Get Score</>)}
+          <button onClick={() => handleSubmit()} disabled={isSubmitting || wordCount < MIN_WORDS} className="glow-primary flex items-center gap-2 px-5 py-2 text-sm font-semibold bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all disabled:opacity-50">
+            {isSubmitting ? (<><Loader2 size={14} className="animate-spin" />Scoring…</>) : (<><Send size={14} />{examModeActive ? 'Turn In Early' : 'Get Score'}</>)}
           </button>
         </div>
       </div>
+
+      <AnimatePresence>
+        {examModeSetupOpen && !examModeActive && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden mb-4">
+            <div className="px-4 py-4 rounded-lg border border-input bg-muted/30">
+              <div className="flex items-center gap-2 mb-1">
+                <Timer size={15} className="text-primary" />
+                <p className="text-sm font-semibold text-foreground">Timed Exam Mode</p>
+              </div>
+              <p className="text-xs text-muted-foreground mb-3">
+                Once started, the clock can&apos;t be paused, the exam type locks, and AI/grammar aids turn off — same as the real room. Your essay auto-submits when time runs out.
+              </p>
+              <div className="flex items-center gap-3 flex-wrap">
+                <label className="flex items-center gap-2 text-sm text-foreground">
+                  Time limit
+                  <input
+                    type="number"
+                    min={1}
+                    max={180}
+                    value={examTimeLimitMinutes}
+                    onChange={(e) => setExamTimeLimitMinutes(Math.max(1, Math.min(180, Number(e.target.value) || 1)))}
+                    className="w-20 px-2.5 py-1.5 text-sm rounded-lg border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                  minutes
+                </label>
+                <button onClick={handleStartExam} className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors">
+                  <Play size={14} />
+                  Start Exam
+                </button>
+                <button onClick={() => setExamModeSetupOpen(false)} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Cancel
+                </button>
+              </div>
+              <p className="mt-3 text-[11px] text-muted-foreground/70 italic">
+                {SUGGESTED_EXAM_TIME_MINUTES[examType]} min is a typical estimate for {examType}, not an official published limit — real timing isn&apos;t consistently published and varies by year. Adjust if your school or review center told you a different number.
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {examModeActive && timeRemainingSec != null && (() => {
+        const limitSec = examTimeLimitMinutes * 60
+        const pct = timeRemainingSec / limitSec
+        const level = pct > 0.5 ? 'beginner' : pct > 0.2 ? 'intermediate' : 'advanced'
+        return (
+          <div
+            className={`mb-4 px-4 py-3 rounded-lg border flex items-center justify-between gap-3 flex-wrap ${level === 'advanced' ? 'animate-pulse' : ''}`}
+            style={{
+              borderColor: `hsl(var(--level-${level}) / 0.35)`,
+              backgroundColor: `hsl(var(--level-${level}) / 0.08)`,
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <Timer size={16} style={{ color: `hsl(var(--level-${level}))` }} />
+              <span className="text-sm font-medium text-foreground">Timed Exam — {examType}</span>
+            </div>
+            <span className="text-2xl font-display font-semibold tabular-nums" style={{ color: `hsl(var(--level-${level}))` }}>
+              {formatTimer(timeRemainingSec)}
+            </span>
+          </div>
+        )
+      })()}
+
+      {examTimeUp && wordCount < 10 && (
+        <div className="mb-4 px-4 py-3 rounded-lg border border-destructive/30 bg-destructive/5 text-sm text-destructive">
+          Time&apos;s up — too little was written to score. You can review your notes and try another timed attempt when ready.
+        </div>
+      )}
 
       <div className="mb-4 px-4 py-2.5 rounded-lg bg-muted/50 border border-border text-sm text-muted-foreground">
         <strong className="text-foreground">{examType}</strong> — {EXAM_DESCRIPTIONS[examType]}
@@ -462,7 +665,7 @@ function EssayEditorInner() {
             {prompt ? 'Essay Prompt' : 'Add a writing prompt (optional)'}
             <ChevronDown size={13} className={`transition-transform ${showPromptPanel ? 'rotate-180' : ''}`} />
           </button>
-          <button onClick={handleGetOutline} className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-input bg-background hover:bg-accent text-muted-foreground hover:text-foreground transition-colors">
+          <button onClick={handleGetOutline} disabled={examLocked} className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-input bg-background hover:bg-accent text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40" title={examLocked ? "Not available during a timed exam — you won't have this in the real room either" : undefined}>
             <Sparkles size={13} className="text-primary" />
             Outline Help
           </button>
@@ -470,7 +673,7 @@ function EssayEditorInner() {
         <AnimatePresence>
           {showPromptPanel && (
             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-              <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Paste or type the essay question/prompt here…" rows={2} className="mt-2 w-full px-4 py-3 text-sm rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
+              <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} disabled={examLocked} placeholder="Paste or type the essay question/prompt here…" rows={2} className="mt-2 w-full px-4 py-3 text-sm rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none disabled:opacity-60" />
             </motion.div>
           )}
         </AnimatePresence>

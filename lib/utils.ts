@@ -138,6 +138,34 @@ export const EXAM_COLORS: Record<string, string> = {
 }
 
 // ============================================================
+// Timed Exam Mode
+//
+// IMPORTANT: these are NOT official published time limits. Philippine
+// college-entrance exams don't consistently publish per-section essay
+// timing, and reported times vary by year, testing center, and
+// whether an essay portion is even included that year. These are
+// reasonable starting points based on commonly reported ranges from
+// past examinees — students should adjust to match whatever their
+// own school or review center has told them, which is why the value
+// is always editable before starting a timed attempt.
+// ============================================================
+
+export const SUGGESTED_EXAM_TIME_MINUTES: Record<string, number> = {
+  UPCAT: 20,
+  ACET: 30,
+  DCAT: 30,
+  USTET: 30,
+  General: 30,
+}
+
+export function formatTimer(totalSeconds: number): string {
+  const s = Math.max(0, Math.round(totalSeconds))
+  const mm = Math.floor(s / 60)
+  const ss = s % 60
+  return `${mm}:${ss.toString().padStart(2, '0')}`
+}
+
+// ============================================================
 // Difficulty-level colors — green/yellow/red, from easiest to hardest
 // ============================================================
 

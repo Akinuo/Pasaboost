@@ -57,12 +57,23 @@ export default function ScoreResultPage({ params }: { params: Promise<{ scoreId:
           <div className="relative">
           <div className="flex items-start justify-between flex-wrap gap-4">
             <div>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
                 <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-white/10 text-[hsl(210_25%_95%)]">{score.examType}</span>
+                {score.examMode && (
+                  <span className="text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1" style={{ backgroundColor: 'hsl(38 75% 55% / 0.18)', color: 'hsl(38 85% 75%)' }}>
+                    <ShieldCheck size={11} />
+                    Timed Mock Exam
+                  </span>
+                )}
                 <span className="text-xs text-white/60">{formatDateTime(score.createdAt)}</span>
               </div>
               <h1 className="text-2xl font-display font-semibold text-[hsl(210_25%_95%)] mb-1">Essay Score Report</h1>
               {score.prompt && <p className="text-white/70 text-sm max-w-lg line-clamp-2">{score.prompt}</p>}
+              {score.examMode && score.timeLimitSeconds != null && score.timeTakenSeconds != null && (
+                <p className="text-white/60 text-xs mt-1.5">
+                  Completed in {Math.floor(score.timeTakenSeconds / 60)}:{(score.timeTakenSeconds % 60).toString().padStart(2, '0')} of {Math.floor(score.timeLimitSeconds / 60)}:{(score.timeLimitSeconds % 60).toString().padStart(2, '0')} under exam conditions
+                </p>
+              )}
             </div>
             <div className="text-right">
               <div className="text-6xl font-display font-semibold" style={{ color: score.totalScore >= 75 ? 'hsl(148 30% 58%)' : score.totalScore >= 60 ? 'hsl(38 60% 60%)' : 'hsl(6 60% 62%)' }}>
