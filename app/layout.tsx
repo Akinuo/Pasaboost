@@ -22,7 +22,13 @@ export const metadata: Metadata = {
   title: 'PasaBoost – AI Essay Coach for Philippine College Exams',
   description: 'AI-powered essay coaching for UPCAT, ACET, DCAT, and USTET preparation.',
   keywords: ['UPCAT', 'ACET', 'DCAT', 'USTET', 'essay coaching', 'college entrance exam', 'Philippines', 'AI'],
-  icons: { icon: '/favicon.svg' },
+  icons: {
+    icon: [
+      { url: '/favicon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-16.png', sizes: '16x16', type: 'image/png' },
+    ],
+    apple: '/apple-icon.png',
+  },
   openGraph: {
     title: 'PasaBoost – AI Essay Coach for Philippine College Exams',
     description: 'Score, feedback, and rewrites for UPCAT, ACET, DCAT, and USTET essays.',
