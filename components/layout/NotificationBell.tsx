@@ -7,6 +7,7 @@
 // ============================================================
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Bell, Heart, MessageCircle, Check } from 'lucide-react'
@@ -23,6 +24,8 @@ export default function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0)
   const [loading, setLoading] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const [coords, setCoords] = useState({ top: 0, right: 0 })
 
   const refreshUnreadCount = useCallback(async () => {
     if (!user) return
@@ -54,14 +57,41 @@ export default function NotificationBell() {
     return () => clearInterval(interval)
   }, [user, open, refreshUnreadCount, loadNotifications])
 
-  // Close on outside click.
+  // Close on outside click. The panel is portaled to document.body (see
+  // below), so it's no longer inside the same wrapper as the button —
+  // both refs need checking or a click on the bell itself would close the
+  // panel via this listener and then immediately reopen it via onClick.
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) setOpen(false)
+      const target = e.target as Node
+      if (panelRef.current?.contains(target)) return
+      if (buttonRef.current?.contains(target)) return
+      setOpen(false)
     }
     if (open) document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [open])
+
+  // Keep the panel anchored under the bell regardless of which narrow
+  // container it's rendered in (desktop sidebar is only 256px wide, the
+  // panel is 320px) — position it via the viewport instead of relying on
+  // CSS absolute positioning inside that container.
+  const updateCoords = useCallback(() => {
+    if (!buttonRef.current) return
+    const rect = buttonRef.current.getBoundingClientRect()
+    setCoords({ top: rect.bottom + 8, right: window.innerWidth - rect.right })
+  }, [])
+
+  useEffect(() => {
+    if (!open) return
+    updateCoords()
+    window.addEventListener('resize', updateCoords)
+    window.addEventListener('scroll', updateCoords, true)
+    return () => {
+      window.removeEventListener('resize', updateCoords)
+      window.removeEventListener('scroll', updateCoords, true)
+    }
+  }, [open, updateCoords])
 
   const handleToggleOpen = () => {
     const next = !open
@@ -95,30 +125,18 @@ export default function NotificationBell() {
 
   if (!user) return null
 
-  return (
-    <div className="relative" ref={panelRef}>
-      <button
-        onClick={handleToggleOpen}
-        className="relative min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md hover:bg-accent transition-colors"
-        aria-label="Notifications"
-      >
-        <Bell size={18} />
-        {unreadCount > 0 && (
-          <span className="absolute top-1.5 right-1.5 flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-destructive text-[10px] font-semibold text-destructive-foreground leading-none">
-            {unreadCount > 9 ? '9+' : unreadCount}
-          </span>
-        )}
-      </button>
-
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] bg-card border border-border rounded-lg shadow-lg z-50 overflow-hidden"
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.15 }}
-          >
+  const panel = (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          ref={panelRef}
+          className="fixed w-80 max-w-[calc(100vw-2rem)] bg-card border border-border rounded-lg shadow-lg z-50 overflow-hidden"
+          style={{ top: coords.top, right: coords.right }}
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.15 }}
+        >
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
               <p className="text-sm font-semibold text-foreground">Notifications</p>
               {unreadCount > 0 && (
@@ -180,9 +198,27 @@ export default function NotificationBell() {
                 </ul>
               )}
             </div>
-          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
+
+  return (
+    <>
+      <button
+        ref={buttonRef}
+        onClick={handleToggleOpen}
+        className="relative min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md hover:bg-accent transition-colors"
+        aria-label="Notifications"
+      >
+        <Bell size={18} />
+        {unreadCount > 0 && (
+          <span className="absolute top-1.5 right-1.5 flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-destructive text-[10px] font-semibold text-destructive-foreground leading-none">
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </span>
         )}
-      </AnimatePresence>
-    </div>
+      </button>
+      {typeof document !== 'undefined' && createPortal(panel, document.body)}
+    </>
   )
 }
