@@ -149,8 +149,8 @@ export default function SharePostModal({ open, onClose, onShared, userId, displa
                 {isAnonymous ? <EyeOff size={15} /> : <Eye size={15} />}
                 Post anonymously
               </span>
-              <span className={`relative w-9 h-5 rounded-full transition-colors ${isAnonymous ? 'bg-primary' : 'bg-muted-foreground/30'}`}>
-                <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${isAnonymous ? 'translate-x-4' : 'translate-x-0.5'}`} />
+              <span className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${isAnonymous ? 'bg-primary' : 'bg-muted-foreground/30'}`}>
+                <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${isAnonymous ? 'translate-x-5' : 'translate-x-0'}`} />
               </span>
             </button>
 
