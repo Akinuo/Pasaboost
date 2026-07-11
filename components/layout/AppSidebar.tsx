@@ -11,6 +11,7 @@ import {
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useTheme } from '@/components/providers/ThemeProvider'
 import LogoMark from '@/components/ui/LogoMark'
+import NotificationBell from '@/components/layout/NotificationBell'
 
 const NAV_ITEMS = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -55,6 +56,7 @@ export default function AppSidebar({ children }: { children: React.ReactNode }) 
               <p className="text-xs text-muted-foreground">Essay Coach</p>
             </div>
           </div>
+          <NotificationBell />
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
@@ -198,6 +200,7 @@ export default function AppSidebar({ children }: { children: React.ReactNode }) 
             <span className="font-display font-semibold text-foreground">PasaBoost</span>
           </div>
           <div className="flex items-center gap-1">
+            <NotificationBell />
             <button onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')} className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md hover:bg-accent" aria-label="Toggle theme">
               <ThemeIcon size={18} />
             </button>

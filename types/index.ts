@@ -252,6 +252,25 @@ export interface CommunityComment {
 }
 
 // ============================================================
+// Notifications — someone liked or commented on your post
+// ============================================================
+
+export type NotificationType = 'like' | 'comment'
+
+export interface AppNotification {
+  id: string
+  actorId: string
+  actorDisplayName: string
+  type: NotificationType
+  postId: string
+  commentId?: string
+  postTitle: string
+  commentPreview?: string
+  isRead: boolean
+  createdAt: Date
+}
+
+// ============================================================
 // Outline / brainstorm assistant
 // ============================================================
 

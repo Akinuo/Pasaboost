@@ -159,6 +159,63 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          actor_display_name: string
+          actor_id: string
+          comment_id: string | null
+          comment_preview: string | null
+          created_at: string | null
+          id: string
+          is_read: boolean
+          post_id: string
+          post_title: string
+          recipient_id: string
+          type: string
+        }
+        Insert: {
+          actor_display_name: string
+          actor_id: string
+          comment_id?: string | null
+          comment_preview?: string | null
+          created_at?: string | null
+          id?: string
+          is_read?: boolean
+          post_id: string
+          post_title: string
+          recipient_id: string
+          type: string
+        }
+        Update: {
+          actor_display_name?: string
+          actor_id?: string
+          comment_id?: string | null
+          comment_preview?: string | null
+          created_at?: string | null
+          id?: string
+          is_read?: boolean
+          post_id?: string
+          post_title?: string
+          recipient_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "community_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_prompts: {
         Row: {
           category: string
