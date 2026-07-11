@@ -42,24 +42,16 @@ export default function NotificationBell() {
   // Initial unread count, and whenever the user changes.
   useEffect(() => { refreshUnreadCount() }, [refreshUnreadCount])
 
-  // Live updates: any new notification for this user bumps the badge,
-  // and refreshes the list if the panel happens to be open.
+  // Poll for new notifications every 5 minutes instead of holding open a
+  // realtime WebSocket subscription. Refreshes the badge count always, and
+  // the list too if the panel happens to be open.
   useEffect(() => {
     if (!user) return
-    const supabase = createClient()
-    const channel = supabase
-      .channel(`notifications-${user.id}`)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'notifications', filter: `recipient_id=eq.${user.id}` },
-        () => {
-          refreshUnreadCount()
-          if (open) loadNotifications()
-        }
-      )
-      .subscribe()
-
-    return () => { supabase.removeChannel(channel) }
+    const interval = setInterval(() => {
+      refreshUnreadCount()
+      if (open) loadNotifications()
+    }, 5 * 60 * 1000)
+    return () => clearInterval(interval)
   }, [user, open, refreshUnreadCount, loadNotifications])
 
   // Close on outside click.
