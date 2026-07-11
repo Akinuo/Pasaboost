@@ -20,6 +20,7 @@ import Groq from 'groq-sdk'
 import { createServiceRoleClient } from '@/lib/supabase/server'
 
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
 const MIN_PROMPTS_PER_DAY = 5

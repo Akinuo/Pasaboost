@@ -31,6 +31,7 @@ import { createServiceRoleClient } from '@/lib/supabase/server'
 import { computeLeaderboardRows, OVERALL_LEADERBOARD_KEY } from '@/lib/utils'
 
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
 interface ScoreRow {
