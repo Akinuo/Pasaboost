@@ -558,13 +558,13 @@ function EssayEditorInner() {
             <span className="hidden sm:inline">Save</span>
           </button>
 
-          <button onClick={handleCheckIntegrity} disabled={wordCount < MIN_WORDS || examLocked} className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border border-input bg-background hover:bg-accent transition-colors disabled:opacity-40" title={examLocked ? "Not available during a timed exam — you won't have this in the real room either" : 'Check for AI-generated text and compare against your past essays'}>
+          <button onClick={handleCheckIntegrity} disabled={wordCount < MIN_WORDS || examLocked} className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border border-input bg-background hover:bg-accent transition-colors disabled:opacity-40" title={examLocked ? "Not available during a timed exam — you won't have this in the real room either" : wordCount < MIN_WORDS ? `Write at least ${MIN_WORDS} words to unlock this (${wordCount}/${MIN_WORDS})` : 'Check for AI-generated text and compare against your past essays'}>
             <ScanSearch size={14} />
             <span className="hidden sm:inline">Check AI / Originality</span>
             <span className="sm:hidden">AI Check</span>
           </button>
 
-          <button onClick={handleCheckGrammar} disabled={wordCount < MIN_WORDS || grammarLoading || examLocked} className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border border-input bg-background hover:bg-accent transition-colors disabled:opacity-40" title={examLocked ? "Not available during a timed exam — you won't have this in the real room either" : 'Check grammar and style, then click highlighted text to fix'}>
+          <button onClick={handleCheckGrammar} disabled={wordCount < MIN_WORDS || grammarLoading || examLocked} className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border border-input bg-background hover:bg-accent transition-colors disabled:opacity-40" title={examLocked ? "Not available during a timed exam — you won't have this in the real room either" : wordCount < MIN_WORDS ? `Write at least ${MIN_WORDS} words to unlock this (${wordCount}/${MIN_WORDS})` : 'Check grammar and style, then click highlighted text to fix'}>
             {grammarLoading ? <Loader2 size={14} className="animate-spin" /> : <SpellCheck2 size={14} />}
             <span className="hidden sm:inline">Check Grammar</span>
             <span className="sm:hidden">Grammar</span>
@@ -584,6 +584,12 @@ function EssayEditorInner() {
           </button>
         </div>
       </div>
+
+      {!examLocked && wordCount < MIN_WORDS && (
+        <p className="text-xs text-muted-foreground -mt-4 mb-4">
+          Write {MIN_WORDS - wordCount} more word{MIN_WORDS - wordCount === 1 ? '' : 's'} to unlock Check AI / Originality and Check Grammar.
+        </p>
+      )}
 
       <AnimatePresence>
         {examModeSetupOpen && !examModeActive && (
