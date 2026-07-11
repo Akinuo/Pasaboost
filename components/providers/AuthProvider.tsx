@@ -51,9 +51,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false)
     })
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null)
-      router.refresh() // keep server components in sync with the new session
+      // Only refresh server components on events that actually change who's
+      // signed in. Refreshing on every event (including TOKEN_REFRESHED,
+      // which middleware.ts also triggers on every request) can cause a
+      // refresh loop: router.refresh() -> middleware refreshes the session
+      // cookie -> client sees a change -> another auth event -> refresh again.
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+        router.refresh()
+      }
     })
 
     return () => listener.subscription.unsubscribe()
