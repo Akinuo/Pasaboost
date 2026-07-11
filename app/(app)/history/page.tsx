@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Search, Filter, Clock, ChevronRight, FileText, PenLine, Download } from 'lucide-react'
+import { Search, Filter, Clock, ChevronRight, FileText, PenLine, Download, Users } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { createClient } from '@/lib/supabase/client'
-import { getUserScores } from '@/lib/queries'
+import { getUserScores, getProfile } from '@/lib/queries'
 import { getScoreColor, getScoreBgColor, getScoreLabel, formatDate, EXAM_COLORS, truncateText } from '@/lib/utils'
 import { exportPortfolioToPDF } from '@/lib/pdfExport'
+import SharePostModal from '@/components/community/SharePostModal'
 import type { EssayScore, ExamType } from '@/types'
 
 const EXAM_FILTERS: Array<ExamType | 'All'> = ['All', 'UPCAT', 'ACET', 'DCAT', 'USTET', 'General']
@@ -20,6 +21,16 @@ export default function HistoryPage() {
   const [search, setSearch] = useState('')
   const [examFilter, setExamFilter] = useState<ExamType | 'All'>('All')
   const [sortBy, setSortBy] = useState<'newest' | 'highest' | 'lowest'>('newest')
+  const [shareTarget, setShareTarget] = useState<EssayScore | null>(null)
+  const [displayName, setDisplayName] = useState('Student')
+
+  useEffect(() => {
+    if (!user) return
+    const supabase = createClient()
+    getProfile(supabase, user.id).then((p) => {
+      setDisplayName(p?.displayName || (user.user_metadata?.display_name as string) || user.email?.split('@')[0] || 'Student')
+    })
+  }, [user])
 
   useEffect(() => {
     if (!user) return
@@ -142,6 +153,14 @@ export default function HistoryPage() {
                         </div>
                       ))}
                     </div>
+                    <button
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShareTarget(score) }}
+                      title="Share to Community"
+                      className="flex items-center justify-center min-w-[36px] min-h-[36px] rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex-shrink-0"
+                      aria-label="Share to Community"
+                    >
+                      <Users size={16} />
+                    </button>
                     <ChevronRight size={16} className="text-muted-foreground group-hover:text-foreground transition-colors flex-shrink-0" />
                   </Link>
                 </motion.div>
@@ -149,6 +168,24 @@ export default function HistoryPage() {
             )}
           </div>
         </>
+      )}
+
+      {user && shareTarget && (
+        <SharePostModal
+          open={!!shareTarget}
+          onClose={() => setShareTarget(null)}
+          onShared={(postId) => { window.location.href = `/community/${postId}` }}
+          userId={user.id}
+          displayName={displayName}
+          defaults={{
+            title: shareTarget.prompt ? shareTarget.prompt.slice(0, 100) : 'My Essay',
+            essay: shareTarget.essay,
+            examType: shareTarget.examType,
+            prompt: shareTarget.prompt,
+            scoreId: shareTarget.id,
+            totalScore: shareTarget.totalScore,
+          }}
+        />
       )}
     </div>
   )
