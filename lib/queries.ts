@@ -11,7 +11,7 @@ import { computeLeaderboardRows, OVERALL_LEADERBOARD_KEY } from '@/lib/utils'
 import type {
   EssayDraft, EssayScore, UserStats, UserProfile,
   LeaderboardEntry, ScoreDataPoint, ExamType, RubricScore, WritingPrompt,
-  CommunityPost, CommunityComment,
+  CommunityPost, CommunityComment, AppNotification,
 } from '@/types'
 
 type TypedClient = SupabaseClient<Database>
@@ -564,5 +564,65 @@ export async function addCommunityComment(
 
 export async function deleteCommunityComment(supabase: TypedClient, commentId: string): Promise<void> {
   const { error } = await supabase.from('community_comments').delete().eq('id', commentId)
+  if (error) throw error
+}
+
+// ============================================================
+// Notifications — "someone liked / commented on your post"
+// Rows are inserted server-side by triggers (see migration 0008),
+// so this layer only ever reads and marks-as-read.
+// ============================================================
+
+function rowToNotification(row: Database['public']['Tables']['notifications']['Row']): AppNotification {
+  return {
+    id: row.id,
+    actorId: row.actor_id,
+    actorDisplayName: row.actor_display_name,
+    type: row.type as AppNotification['type'],
+    postId: row.post_id,
+    commentId: row.comment_id ?? undefined,
+    postTitle: row.post_title,
+    commentPreview: row.comment_preview ?? undefined,
+    isRead: row.is_read,
+    createdAt: new Date(row.created_at ?? Date.now()),
+  }
+}
+
+export async function getNotifications(
+  supabase: TypedClient,
+  userId: string,
+  limit = 30
+): Promise<AppNotification[]> {
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('recipient_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (error || !data) return []
+  return data.map(rowToNotification)
+}
+
+export async function getUnreadNotificationCount(supabase: TypedClient, userId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('notifications')
+    .select('id', { count: 'exact', head: true })
+    .eq('recipient_id', userId)
+    .eq('is_read', false)
+  if (error) return 0
+  return count ?? 0
+}
+
+export async function markNotificationRead(supabase: TypedClient, notificationId: string): Promise<void> {
+  const { error } = await supabase.from('notifications').update({ is_read: true }).eq('id', notificationId)
+  if (error) throw error
+}
+
+export async function markAllNotificationsRead(supabase: TypedClient, userId: string): Promise<void> {
+  const { error } = await supabase
+    .from('notifications')
+    .update({ is_read: true })
+    .eq('recipient_id', userId)
+    .eq('is_read', false)
   if (error) throw error
 }
