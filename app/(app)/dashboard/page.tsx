@@ -1,14 +1,14 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { PenLine, TrendingUp, Star, ArrowRight, BarChart3, Clock, Target, BookOpen, Lightbulb, Sparkles } from 'lucide-react'
+import { PenLine, TrendingUp, Star, ArrowRight, BarChart3, Clock, Target, BookOpen, Lightbulb, Sparkles, Crosshair } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { createClient } from '@/lib/supabase/client'
 import { getUserScores, getDailyGeneratedPrompts } from '@/lib/queries'
-import { getDailyPrompt } from '@/lib/prompts'
-import { getScoreColor, getScoreLabel, formatDateTime, EXAM_COLORS, LEVEL_COLORS } from '@/lib/utils'
+import { getDailyPrompt, getPromptsForDimension } from '@/lib/prompts'
+import { getScoreColor, getScoreLabel, formatDateTime, EXAM_COLORS, LEVEL_COLORS, getWeakestDimension, DIMENSION_DESCRIPTIONS } from '@/lib/utils'
 import type { EssayScore, WritingPrompt } from '@/types'
 
 export default function DashboardPage() {
@@ -59,6 +59,16 @@ export default function DashboardPage() {
   const prevScore = recentScores[1]?.totalScore ?? null
   const trend = lastScore !== null && prevScore !== null ? lastScore - prevScore : null
 
+  // Weakness-targeted practice: surfaces the rubric dimension the
+  // student's recent essays score lowest on, with prompts picked to
+  // exercise that dimension — instead of leaving the pattern buried
+  // across individual score pages.
+  const weakest = useMemo(() => getWeakestDimension(recentScores), [recentScores])
+  const weakestPrompts = useMemo(
+    () => (weakest ? getPromptsForDimension(weakest.dimension, { examType: recentScores[0]?.examType, limit: 3 }) : []),
+    [weakest, recentScores]
+  )
+
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: (i: number) => ({ opacity: 1, y: 0, transition: { delay: i * 0.08 } }),
@@ -102,6 +112,36 @@ export default function DashboardPage() {
           </Link>
         </div>
       </motion.div>
+
+      {weakest && weakestPrompts.length > 0 && (
+        <motion.div className="mb-8 p-6 rounded-lg border border-border bg-card" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
+          <div className="flex items-center gap-2 mb-2">
+            <Crosshair size={16} className="text-primary" />
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Weakness-Targeted Practice</span>
+          </div>
+          <p className="text-sm text-foreground max-w-2xl leading-snug mb-1">
+            <strong>{weakest.dimension}</strong> is your lowest-scoring dimension right now, averaging{' '}
+            <strong>{weakest.averageScore.toFixed(1)}/20</strong> across your last {weakest.sampleSize} essays —{' '}
+            {DIMENSION_DESCRIPTIONS[weakest.dimension]}.
+          </p>
+          <p className="text-xs text-muted-foreground mb-4">Here are prompts picked to stress that dimension:</p>
+          <div className="grid sm:grid-cols-3 gap-3">
+            {weakestPrompts.map((p) => (
+              <Link
+                key={p.id}
+                href={`/editor?prompt=${encodeURIComponent(p.text)}&examType=${p.examType[0] || 'General'}`}
+                className="block p-3 rounded-lg border border-border bg-background hover:border-foreground/20 transition-colors"
+              >
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <span className="text-[10px] px-1.5 py-0.5 bg-muted rounded-full text-muted-foreground">{p.category}</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${LEVEL_COLORS[p.difficulty]}`}>{p.difficulty}</span>
+                </div>
+                <p className="text-xs text-foreground line-clamp-3 leading-snug">{p.text}</p>
+              </Link>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[

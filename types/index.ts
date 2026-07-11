@@ -142,6 +142,10 @@ export interface WritingPrompt {
   tip?: string
   isDaily?: boolean
   date?: string
+  // Which rubric dimension(s) this prompt is well-suited to exercise —
+  // powers the "weakness-targeted practice" recommendations on the
+  // Dashboard (see getPromptsForDimension in lib/prompts.ts).
+  skillFocus?: ScoreDimension[]
 }
 
 export interface LeaderboardEntry {

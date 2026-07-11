@@ -68,6 +68,56 @@ export function getDimensionColor(dimension: ScoreDimension): string {
   return colors[dimension]
 }
 
+export const DIMENSION_DESCRIPTIONS: Record<ScoreDimension, string> = {
+  Content: 'how well you develop ideas with specific, relevant evidence',
+  Organization: 'how clearly your essay is structured from intro to conclusion',
+  Grammar: 'sentence-level correctness — tenses, agreement, and mechanics',
+  Coherence: 'how smoothly your ideas connect from sentence to sentence',
+  Argument: 'how convincingly you state and support your thesis',
+}
+
+// ============================================================
+// Weakness detection
+// Averages each rubric dimension across a set of scores (e.g. a
+// student's recent essays) and returns whichever one is lowest —
+// used to power "weakness-targeted practice" recommendations.
+// Requires at least `minSamples` scores so the insight isn't drawn
+// from a single essay's noise.
+// ============================================================
+
+export interface WeakestDimensionResult {
+  dimension: ScoreDimension
+  averageScore: number // out of 20
+  sampleSize: number
+}
+
+export function getWeakestDimension(
+  scores: Array<{ rubricScores: { dimension: ScoreDimension; score: number }[] }>,
+  minSamples = 3
+): WeakestDimensionResult | null {
+  if (scores.length < minSamples) return null
+
+  const totals = new Map<ScoreDimension, { sum: number; count: number }>()
+  for (const s of scores) {
+    for (const r of s.rubricScores) {
+      const entry = totals.get(r.dimension) ?? { sum: 0, count: 0 }
+      entry.sum += r.score
+      entry.count += 1
+      totals.set(r.dimension, entry)
+    }
+  }
+
+  let weakest: WeakestDimensionResult | null = null
+  for (const [dimension, { sum, count }] of totals) {
+    if (count === 0) continue
+    const averageScore = sum / count
+    if (!weakest || averageScore < weakest.averageScore) {
+      weakest = { dimension, averageScore, sampleSize: count }
+    }
+  }
+  return weakest
+}
+
 // ============================================================
 // Text utilities
 // ============================================================
