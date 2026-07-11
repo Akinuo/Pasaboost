@@ -3,7 +3,7 @@
 // Static content — no database round-trip needed.
 // ============================================================
 
-import type { WritingPrompt, PromptCategory } from '@/types'
+import type { WritingPrompt, PromptCategory, ExamType, ScoreDimension } from '@/types'
 
 export const WRITING_PROMPTS: WritingPrompt[] = [
   {
@@ -14,6 +14,7 @@ export const WRITING_PROMPTS: WritingPrompt[] = [
     difficulty: 'Advanced',
     keywords: ['criminal liability', 'juvenile justice', 'Juvenile Justice Welfare Act'],
     tip: 'Discuss both rehabilitation and deterrence perspectives before presenting your stance.',
+    skillFocus: ['Argument', 'Coherence'],
   },
   {
     id: 'si-002',
@@ -23,6 +24,7 @@ export const WRITING_PROMPTS: WritingPrompt[] = [
     difficulty: 'Intermediate',
     keywords: ['UHC', 'PhilHealth', 'healthcare access', 'rural health'],
     tip: 'Use specific examples from Philippine provinces to make your essay more concrete.',
+    skillFocus: ['Content', 'Organization'],
   },
   {
     id: 'si-003',
@@ -32,6 +34,7 @@ export const WRITING_PROMPTS: WritingPrompt[] = [
     difficulty: 'Intermediate',
     keywords: ['social media', 'disinformation', 'mental health', 'digital literacy'],
     tip: 'Reference specific Philippine contexts such as the 2022 elections and typhoon response.',
+    skillFocus: ['Coherence', 'Argument'],
   },
   {
     id: 'si-004',
@@ -41,6 +44,7 @@ export const WRITING_PROMPTS: WritingPrompt[] = [
     difficulty: 'Advanced',
     keywords: ['poverty', 'income inequality', 'conditional cash transfer', 'economic development'],
     tip: 'Cite PSA data on poverty incidence and reference specific government programs.',
+    skillFocus: ['Content', 'Argument'],
   },
   {
     id: 'si-005',
@@ -50,6 +54,7 @@ export const WRITING_PROMPTS: WritingPrompt[] = [
     difficulty: 'Advanced',
     keywords: ['federalism', 'decentralization', 'local governance', 'Bangsamoro'],
     tip: 'Consider the Bangsamoro Organic Law as an example of decentralization.',
+    skillFocus: ['Argument', 'Organization'],
   },
   {
     id: 'st-001',
@@ -59,6 +64,7 @@ export const WRITING_PROMPTS: WritingPrompt[] = [
     difficulty: 'Advanced',
     keywords: ['artificial intelligence', 'digital transformation', 'ICT', 'e-government'],
     tip: 'Reference DICT initiatives and the National AI Roadmap of the Philippines.',
+    skillFocus: ['Content', 'Organization'],
   },
   {
     id: 'st-002',
@@ -68,6 +74,7 @@ export const WRITING_PROMPTS: WritingPrompt[] = [
     difficulty: 'Advanced',
     keywords: ['nuclear energy', 'BNPP', 'energy security', 'renewable energy'],
     tip: 'Discuss the Bataan Nuclear Power Plant history for added Philippine context.',
+    skillFocus: ['Argument', 'Organization'],
   },
   {
     id: 'st-003',
@@ -77,6 +84,7 @@ export const WRITING_PROMPTS: WritingPrompt[] = [
     difficulty: 'Intermediate',
     keywords: ['climate change', 'typhoon', 'sea-level rise', 'PAGASA'],
     tip: 'Use data on the Philippines being one of the most climate-vulnerable nations.',
+    skillFocus: ['Content', 'Coherence'],
   },
   {
     id: 'ed-001',
@@ -86,6 +94,7 @@ export const WRITING_PROMPTS: WritingPrompt[] = [
     difficulty: 'Intermediate',
     keywords: ['K-12', 'DepEd', 'SHS', 'educational reform'],
     tip: 'Look at PISA rankings and DepEd enrollment data to support your arguments.',
+    skillFocus: ['Content', 'Argument'],
   },
   {
     id: 'ed-002',
@@ -95,6 +104,7 @@ export const WRITING_PROMPTS: WritingPrompt[] = [
     difficulty: 'Intermediate',
     keywords: ['free tuition', 'CHED', 'SUCs', 'Universal Access to Quality Tertiary Education Act'],
     tip: 'Reference Republic Act 10931 (Free Tuition Law) in your discussion.',
+    skillFocus: ['Organization', 'Argument'],
   },
   {
     id: 'ed-003',
@@ -104,6 +114,7 @@ export const WRITING_PROMPTS: WritingPrompt[] = [
     difficulty: 'Beginner',
     keywords: ['education reform', 'digital skills', '21st century learning', 'teachers'],
     tip: 'Focus on digital literacy, critical thinking, and teacher training as key reform areas.',
+    skillFocus: ['Organization', 'Grammar'],
   },
   {
     id: 'en-001',
@@ -113,6 +124,7 @@ export const WRITING_PROMPTS: WritingPrompt[] = [
     difficulty: 'Advanced',
     keywords: ['West Philippine Sea', 'UNCLOS', 'maritime resources', 'fisherfolk'],
     tip: 'Reference the 2016 Arbitral Tribunal ruling and its implications for Philippine fisheries.',
+    skillFocus: ['Coherence', 'Organization'],
   },
   {
     id: 'en-002',
@@ -122,6 +134,7 @@ export const WRITING_PROMPTS: WritingPrompt[] = [
     difficulty: 'Beginner',
     keywords: ['plastic pollution', 'Extended Producer Responsibility', 'zero-waste', 'Manila Bay'],
     tip: 'The Extended Producer Responsibility Act (RA 11898) is relevant to cite here.',
+    skillFocus: ['Grammar', 'Content'],
   },
   {
     id: 'ci-001',
@@ -131,6 +144,7 @@ export const WRITING_PROMPTS: WritingPrompt[] = [
     difficulty: 'Advanced',
     keywords: ['colonial mentality', 'Filipino identity', 'Rizal', 'heritage'],
     tip: "Draw on Rizal's essays and discuss both colonial trauma and cultural resilience.",
+    skillFocus: ['Coherence', 'Content'],
   },
   {
     id: 'ci-002',
@@ -140,6 +154,7 @@ export const WRITING_PROMPTS: WritingPrompt[] = [
     difficulty: 'Intermediate',
     keywords: ['Filipino language', 'MTB-MLE', 'multilingual education', 'lingua franca'],
     tip: 'Consider the Mother Tongue-Based Multilingual Education policy in your discussion.',
+    skillFocus: ['Coherence', 'Argument'],
   },
   {
     id: 'ec-001',
@@ -149,6 +164,7 @@ export const WRITING_PROMPTS: WritingPrompt[] = [
     difficulty: 'Intermediate',
     keywords: ['OFW', 'remittances', 'brain drain', 'labor migration'],
     tip: 'Reference BSP data on OFW remittances and discuss the social costs of migration.',
+    skillFocus: ['Content', 'Argument'],
   },
   {
     id: 'ec-002',
@@ -158,6 +174,7 @@ export const WRITING_PROMPTS: WritingPrompt[] = [
     difficulty: 'Advanced',
     keywords: ['foreign investment', 'economic liberalization', 'FDI', 'PEZA'],
     tip: 'Consider constitutional restrictions on foreign ownership and recent amendments.',
+    skillFocus: ['Argument', 'Organization'],
   },
   {
     id: 'he-001',
@@ -167,6 +184,7 @@ export const WRITING_PROMPTS: WritingPrompt[] = [
     difficulty: 'Beginner',
     keywords: ['mental health', 'Mental Health Act', 'youth', 'school counseling'],
     tip: 'Reference Republic Act 11036 (Mental Health Act) and pandemic-related statistics.',
+    skillFocus: ['Grammar', 'Organization'],
   },
   {
     id: 'he-002',
@@ -176,6 +194,7 @@ export const WRITING_PROMPTS: WritingPrompt[] = [
     difficulty: 'Intermediate',
     keywords: ['COVID-19', 'healthcare system', 'pandemic preparedness', 'DOH'],
     tip: 'Compare pre- and post-pandemic healthcare metrics, hospital capacity, and vaccination rates.',
+    skillFocus: ['Content', 'Organization'],
   },
 ]
 
@@ -194,6 +213,40 @@ export function getPromptsByCategory(category: PromptCategory): WritingPrompt[] 
 export function getRandomPrompt(category?: PromptCategory): WritingPrompt {
   const pool = category ? WRITING_PROMPTS.filter((p) => p.category === category) : WRITING_PROMPTS
   return pool[Math.floor(Math.random() * pool.length)]
+}
+
+// ============================================================
+// Weakness-targeted practice
+// Given a rubric dimension (e.g. a student's lowest-scoring one),
+// returns prompts tagged as good exercise for that dimension —
+// powers the Dashboard's "Weakness-Targeted Practice" card.
+// ============================================================
+export function getPromptsForDimension(
+  dimension: ScoreDimension,
+  options?: { examType?: ExamType; limit?: number; excludeIds?: string[] }
+): WritingPrompt[] {
+  const limit = options?.limit ?? 3
+  const exclude = new Set(options?.excludeIds ?? [])
+
+  let pool = WRITING_PROMPTS.filter((p) => p.skillFocus?.includes(dimension) && !exclude.has(p.id))
+
+  // Prefer prompts matching the student's exam type, but only if there
+  // are enough of them — otherwise fall back to the full dimension pool.
+  if (options?.examType) {
+    const forExam = pool.filter((p) => p.examType.includes(options.examType!))
+    if (forExam.length >= limit) pool = forExam
+  }
+
+  return shuffle(pool).slice(0, limit)
+}
+
+function shuffle<T>(arr: T[]): T[] {
+  const copy = [...arr]
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[copy[i], copy[j]] = [copy[j], copy[i]]
+  }
+  return copy
 }
 
 export const PROMPT_CATEGORIES: PromptCategory[] = [
