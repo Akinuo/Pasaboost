@@ -330,9 +330,10 @@ export async function syncLeaderboardEntries(
   supabase: TypedClient,
   userId: string,
   alias: string,
-  scoresOldestFirst: Array<{ totalScore: number; examType: ExamType }>
+  scoresOldestFirst: Array<{ totalScore: number; examType: ExamType }>,
+  currentStreak?: number
 ): Promise<void> {
-  const rows = computeLeaderboardRows(userId, alias, scoresOldestFirst).map((row) => ({
+  const rows = computeLeaderboardRows(userId, alias, scoresOldestFirst, currentStreak).map((row) => ({
     ...row,
     last_updated: new Date().toISOString(),
   }))

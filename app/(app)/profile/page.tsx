@@ -6,7 +6,7 @@ import { motion } from 'framer-motion'
 import { User, Mail, Bell, Shield, LogOut, Save, Eye, EyeOff, Camera, CheckCircle, AlertCircle, Shuffle } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { createClient } from '@/lib/supabase/client'
-import { getProfile, updateProfile, syncLeaderboardEntries, renameLeaderboardAlias, removeLeaderboardEntry, getUserScores } from '@/lib/queries'
+import { getProfile, updateProfile, syncLeaderboardEntries, renameLeaderboardAlias, removeLeaderboardEntry, getUserScores, getUserStats } from '@/lib/queries'
 import { generateLeaderboardAlias, validateLeaderboardAlias } from '@/lib/utils'
 
 export default function ProfilePage() {
@@ -94,7 +94,8 @@ export default function ProfilePage() {
       }
       const scores = await getUserScores(supabase, user.id, { limit: 200 })
       const oldestFirst = [...scores].reverse().map((s) => ({ totalScore: s.totalScore, examType: s.examType }))
-      await syncLeaderboardEntries(supabase, user.id, alias, oldestFirst)
+      const stats = await getUserStats(supabase, user.id)
+      await syncLeaderboardEntries(supabase, user.id, alias, oldestFirst, stats?.currentStreak)
     } else {
       await removeLeaderboardEntry(supabase, user.id)
     }
