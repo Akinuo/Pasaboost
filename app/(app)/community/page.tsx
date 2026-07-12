@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Users, Heart, MessageCircle, Plus, Trash2, EyeOff, Clock } from 'lucide-react'
+import { Users, Heart, MessageCircle, Plus, Trash2, EyeOff, Clock, ClipboardCheck } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { createClient } from '@/lib/supabase/client'
 import { getCommunityPosts, getProfile, likeCommunityPost, unlikeCommunityPost, deleteCommunityPost } from '@/lib/queries'
@@ -18,6 +18,7 @@ export default function CommunityPage() {
   const [posts, setPosts] = useState<CommunityPost[]>([])
   const [loading, setLoading] = useState(true)
   const [examFilter, setExamFilter] = useState<ExamType | 'All'>('All')
+  const [reviewOnly, setReviewOnly] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [displayName, setDisplayName] = useState('Student')
 
@@ -83,6 +84,8 @@ export default function CommunityPage() {
 
   if (loading) return <CommunitySkeleton />
 
+  const visiblePosts = reviewOnly ? posts.filter((p) => p.reviewRequested) : posts
+
   return (
     <div className="max-w-2xl mx-auto">
       <div className="page-header flex items-start justify-between gap-4 flex-wrap">
@@ -102,23 +105,32 @@ export default function CommunityPage() {
         </button>
       </div>
 
-      <div className="flex gap-1.5 flex-wrap mb-6">
-        {EXAM_FILTERS.map((ef) => (
-          <button
-            key={ef}
-            onClick={() => setExamFilter(ef)}
-            className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${examFilter === ef ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
-          >
-            {ef}
-          </button>
-        ))}
+      <div className="flex items-center justify-between flex-wrap gap-2 mb-6">
+        <div className="flex gap-1.5 flex-wrap">
+          {EXAM_FILTERS.map((ef) => (
+            <button
+              key={ef}
+              onClick={() => setExamFilter(ef)}
+              className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${examFilter === ef ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
+            >
+              {ef}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={() => setReviewOnly((v) => !v)}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${reviewOnly ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
+        >
+          <ClipboardCheck size={13} />
+          Requesting Review
+        </button>
       </div>
 
-      {posts.length === 0 ? (
+      {visiblePosts.length === 0 ? (
         <div className="text-center py-16 border-2 border-dashed border-border rounded-lg">
           <Users size={36} className="mx-auto text-muted-foreground/40 mb-3" />
-          <p className="font-medium text-foreground mb-1">No shared essays yet</p>
-          <p className="text-sm text-muted-foreground mb-5">Be the first to share one for others to read.</p>
+          <p className="font-medium text-foreground mb-1">{reviewOnly ? 'No open review requests' : 'No shared essays yet'}</p>
+          <p className="text-sm text-muted-foreground mb-5">{reviewOnly ? 'Check back later, or share your own essay for review.' : 'Be the first to share one for others to read.'}</p>
           <button onClick={() => setModalOpen(true)} className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors text-sm">
             <Plus size={16} />
             Share an Essay
@@ -126,7 +138,7 @@ export default function CommunityPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {posts.map((post, i) => (
+          {visiblePosts.map((post, i) => (
             <motion.div key={post.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.04, 0.4) }}>
               <div className="p-4 rounded-lg border border-border bg-card hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between gap-3 mb-2">
@@ -151,6 +163,13 @@ export default function CommunityPage() {
                   <h3 className="font-display font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">{post.title}</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">{truncateText(post.essay, 220)}</p>
                 </Link>
+
+                {post.reviewRequested && post.reviewDimensions.length > 0 && (
+                  <Link href={`/community/${post.id}`} className="inline-flex items-center gap-1.5 mt-2 px-2 py-1 rounded-md text-[11px] font-medium bg-primary/10 text-primary hover:bg-primary/15 transition-colors">
+                    <ClipboardCheck size={11} />
+                    Wants review: {post.reviewDimensions.join(', ')}
+                  </Link>
+                )}
 
                 <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border">
                   <button

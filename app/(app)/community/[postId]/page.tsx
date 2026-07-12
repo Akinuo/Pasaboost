@@ -9,11 +9,12 @@ import { createClient } from '@/lib/supabase/client'
 import {
   getCommunityPost, getCommunityComments, addCommunityComment,
   deleteCommunityComment, likeCommunityPost, unlikeCommunityPost, deleteCommunityPost,
-  getProfile,
+  getProfile, getPostReviews,
 } from '@/lib/queries'
 import { EXAM_COLORS, getRelativeTime } from '@/lib/utils'
-import type { CommunityPost, CommunityComment } from '@/types'
+import type { CommunityPost, CommunityComment, CommunityPostReview } from '@/types'
 import { useRouter } from 'next/navigation'
+import StructuredReview from '@/components/community/StructuredReview'
 
 export default function CommunityPostPage({ params }: { params: Promise<{ postId: string }> }) {
   const { postId } = use(params)
@@ -21,6 +22,7 @@ export default function CommunityPostPage({ params }: { params: Promise<{ postId
   const router = useRouter()
   const [post, setPost] = useState<CommunityPost | null>(null)
   const [comments, setComments] = useState<CommunityComment[]>([])
+  const [reviews, setReviews] = useState<CommunityPostReview[]>([])
   const [loading, setLoading] = useState(true)
   const [commentText, setCommentText] = useState('')
   const [posting, setPosting] = useState(false)
@@ -30,12 +32,14 @@ export default function CommunityPostPage({ params }: { params: Promise<{ postId
     if (!user) return
     const supabase = createClient()
     if (!silent) setLoading(true)
-    const [p, c] = await Promise.all([
+    const [p, c, r] = await Promise.all([
       getCommunityPost(supabase, postId, user.id),
       getCommunityComments(supabase, postId, user.id),
+      getPostReviews(supabase, postId, user.id),
     ])
     setPost(p)
     setComments(c)
+    setReviews(r)
     setLoading(false)
   }, [postId, user])
 
@@ -56,6 +60,7 @@ export default function CommunityPostPage({ params }: { params: Promise<{ postId
       .channel(`community-post-${postId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'community_comments', filter: `post_id=eq.${postId}` }, () => load(true))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'community_posts', filter: `id=eq.${postId}` }, () => load(true))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'post_reviews', filter: `post_id=eq.${postId}` }, () => load(true))
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
@@ -163,6 +168,18 @@ export default function CommunityPostPage({ params }: { params: Promise<{ postId
           )}
         </div>
       </motion.div>
+
+      {user && (post.reviewRequested || reviews.length > 0) && (
+        <StructuredReview
+          postId={post.id}
+          isOwnPost={post.isOwn}
+          reviewDimensions={post.reviewDimensions}
+          reviews={reviews}
+          currentUserId={user.id}
+          displayName={displayName}
+          onReviewSubmitted={() => load(true)}
+        />
+      )}
 
       <div className="rounded-lg border border-border bg-card p-5 sm:p-6">
         <h2 className="font-display font-semibold text-foreground mb-4">

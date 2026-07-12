@@ -188,6 +188,29 @@ export interface GrammarCheckResponse {
 }
 
 // ============================================================
+// Feedback Follow-up Q&A
+// A lightweight chat tied to one score (and optionally one rubric
+// dimension) so a student can ask "why did I lose points here?"
+// instead of just reading the static feedback once.
+// ============================================================
+
+export interface FeedbackQAMessage {
+  id: string
+  scoreId: string
+  userId: string
+  dimension?: ScoreDimension // undefined = about the overall feedback, not one rubric row
+  role: 'user' | 'assistant'
+  content: string
+  createdAt: Date
+}
+
+export interface FeedbackQAResponse {
+  success: boolean
+  message?: FeedbackQAMessage
+  error?: string
+}
+
+// ============================================================
 // AI-generated text detection
 // ============================================================
 
@@ -240,6 +263,10 @@ export interface CommunityPost {
   likedByMe: boolean
   isOwn: boolean
   createdAt: Date
+  // Structured peer review — see CommunityPostReview below.
+  reviewRequested: boolean
+  reviewDimensions: ScoreDimension[] // dimensions the author wants targeted feedback on (max 3)
+  reviewCount: number // total structured reviews received across all dimensions
 }
 
 export interface CommunityComment {
@@ -248,6 +275,28 @@ export interface CommunityComment {
   userId: string
   displayName: string
   content: string
+  isOwn: boolean
+  createdAt: Date
+}
+
+// ============================================================
+// Structured Peer Review
+// A "request a review" flow that's more directed than the
+// like/comment feed: the author picks up to 3 rubric dimensions,
+// and each reviewer leaves one targeted, structured review for
+// exactly one open dimension (rating + what worked + a suggestion)
+// instead of a general comment.
+// ============================================================
+
+export interface CommunityPostReview {
+  id: string
+  postId: string
+  reviewerId: string
+  reviewerDisplayName: string
+  dimension: ScoreDimension
+  rating: number // 1-5
+  whatWorked: string
+  suggestion: string
   isOwn: boolean
   createdAt: Date
 }

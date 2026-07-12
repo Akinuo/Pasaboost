@@ -9,13 +9,15 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Users, Eye, EyeOff, Loader2 } from 'lucide-react'
+import { X, Users, Eye, EyeOff, Loader2, ClipboardCheck } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { createCommunityPost } from '@/lib/queries'
 import { countWords } from '@/lib/utils'
-import type { ExamType } from '@/types'
+import type { ExamType, ScoreDimension } from '@/types'
 
 const EXAM_OPTIONS: ExamType[] = ['UPCAT', 'ACET', 'DCAT', 'USTET', 'General']
+const REVIEW_DIMENSION_OPTIONS: ScoreDimension[] = ['Content', 'Organization', 'Grammar', 'Coherence', 'Argument']
+const MAX_REVIEW_DIMENSIONS = 3
 
 interface SharePostModalProps {
   open: boolean
@@ -38,15 +40,26 @@ export default function SharePostModal({ open, onClose, onShared, userId, displa
   const [essay, setEssay] = useState(defaults?.essay ?? '')
   const [examType, setExamType] = useState<ExamType>(defaults?.examType ?? 'General')
   const [isAnonymous, setIsAnonymous] = useState(false)
+  const [reviewRequested, setReviewRequested] = useState(false)
+  const [reviewDimensions, setReviewDimensions] = useState<ScoreDimension[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   if (!open) return null
 
+  const toggleDimension = (d: ScoreDimension) => {
+    setReviewDimensions((prev) => {
+      if (prev.includes(d)) return prev.filter((x) => x !== d)
+      if (prev.length >= MAX_REVIEW_DIMENSIONS) return prev
+      return [...prev, d]
+    })
+  }
+
   const handleSubmit = async () => {
     setError(null)
     if (!title.trim()) return setError('Give your essay a title.')
     if (essay.trim().length < 50) return setError('Essay needs to be at least 50 characters — share something worth reading.')
+    if (reviewRequested && reviewDimensions.length === 0) return setError('Pick at least one dimension you want reviewed.')
 
     setSubmitting(true)
     try {
@@ -61,6 +74,8 @@ export default function SharePostModal({ open, onClose, onShared, userId, displa
         prompt: defaults?.prompt,
         scoreId: defaults?.scoreId,
         totalScore: defaults?.totalScore,
+        reviewRequested,
+        reviewDimensions: reviewRequested ? reviewDimensions : [],
       })
       onShared(postId)
       onClose()
@@ -155,6 +170,49 @@ export default function SharePostModal({ open, onClose, onShared, userId, displa
                 />
               </span>
             </button>
+
+            <div>
+              <button
+                type="button"
+                onClick={() => setReviewRequested(!reviewRequested)}
+                className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg border border-border bg-muted/40 hover:bg-muted/70 transition-colors"
+              >
+                <span className="flex items-center gap-2 text-sm text-foreground">
+                  <ClipboardCheck size={15} />
+                  Request a structured review
+                </span>
+                <span className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${reviewRequested ? 'bg-primary' : 'bg-muted-foreground/30'}`}>
+                  <span
+                    className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ease-out ${reviewRequested ? 'translate-x-5' : 'translate-x-0'}`}
+                  />
+                </span>
+              </button>
+
+              {reviewRequested && (
+                <div className="mt-2.5 pl-1">
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Pick up to {MAX_REVIEW_DIMENSIONS} dimensions — classmates can each pick one to give you targeted feedback on.
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {REVIEW_DIMENSION_OPTIONS.map((d) => {
+                      const selected = reviewDimensions.includes(d)
+                      const disabled = !selected && reviewDimensions.length >= MAX_REVIEW_DIMENSIONS
+                      return (
+                        <button
+                          key={d}
+                          type="button"
+                          disabled={disabled}
+                          onClick={() => toggleDimension(d)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${selected ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
+                        >
+                          {d}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {error && <p className="text-sm text-destructive">{error}</p>}
           </div>

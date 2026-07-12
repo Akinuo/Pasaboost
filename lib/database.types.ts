@@ -114,6 +114,9 @@ export type Database = {
           is_anonymous: boolean
           like_count: number
           prompt: string | null
+          review_count: number
+          review_dimensions: string[]
+          review_requested: boolean
           score_id: string | null
           title: string
           total_score: number | null
@@ -129,6 +132,9 @@ export type Database = {
           is_anonymous?: boolean
           like_count?: number
           prompt?: string | null
+          review_count?: number
+          review_dimensions?: string[]
+          review_requested?: boolean
           score_id?: string | null
           title?: string
           total_score?: number | null
@@ -144,6 +150,9 @@ export type Database = {
           is_anonymous?: boolean
           like_count?: number
           prompt?: string | null
+          review_count?: number
+          review_dimensions?: string[]
+          review_requested?: boolean
           score_id?: string | null
           title?: string
           total_score?: number | null
@@ -152,6 +161,88 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "community_posts_score_id_fkey"
+            columns: ["score_id"]
+            isOneToOne: false
+            referencedRelation: "scores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_reviews: {
+        Row: {
+          created_at: string | null
+          dimension: string
+          id: string
+          post_id: string
+          rating: number
+          reviewer_display_name: string
+          reviewer_id: string
+          suggestion: string
+          what_worked: string
+        }
+        Insert: {
+          created_at?: string | null
+          dimension: string
+          id?: string
+          post_id: string
+          rating: number
+          reviewer_display_name: string
+          reviewer_id: string
+          suggestion: string
+          what_worked: string
+        }
+        Update: {
+          created_at?: string | null
+          dimension?: string
+          id?: string
+          post_id?: string
+          rating?: number
+          reviewer_display_name?: string
+          reviewer_id?: string
+          suggestion?: string
+          what_worked?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_reviews_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feedback_qa_messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          dimension: string | null
+          id: string
+          role: string
+          score_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          dimension?: string | null
+          id?: string
+          role: string
+          score_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          dimension?: string | null
+          id?: string
+          role?: string
+          score_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_qa_messages_score_id_fkey"
             columns: ["score_id"]
             isOneToOne: false
             referencedRelation: "scores"

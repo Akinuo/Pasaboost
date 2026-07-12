@@ -12,6 +12,7 @@ import type {
   EssayDraft, EssayScore, UserStats, UserProfile,
   LeaderboardEntry, ScoreDataPoint, ExamType, RubricScore, WritingPrompt,
   CommunityPost, CommunityComment, AppNotification, DrillAttempt, ScoreDimension,
+  CommunityPostReview, FeedbackQAMessage,
 } from '@/types'
 
 type TypedClient = SupabaseClient<Database>
@@ -419,6 +420,9 @@ function rowToCommunityPost(
     likedByMe: likedPostIds.has(row.id),
     isOwn: row.user_id === currentUserId,
     createdAt: new Date(row.created_at ?? Date.now()),
+    reviewRequested: (row as any).review_requested ?? false,
+    reviewDimensions: ((row as any).review_dimensions as ScoreDimension[]) ?? [],
+    reviewCount: (row as any).review_count ?? 0,
   }
 }
 
@@ -489,6 +493,8 @@ export async function createCommunityPost(
     prompt?: string
     scoreId?: string
     totalScore?: number
+    reviewRequested?: boolean
+    reviewDimensions?: ScoreDimension[]
   }
 ): Promise<string> {
   const { data, error } = await supabase
@@ -503,7 +509,9 @@ export async function createCommunityPost(
       prompt: post.prompt,
       score_id: post.scoreId,
       total_score: post.totalScore,
-    })
+      review_requested: post.reviewRequested ?? false,
+      review_dimensions: post.reviewDimensions ?? [],
+    } as any)
     .select('id')
     .single()
 
@@ -566,6 +574,114 @@ export async function addCommunityComment(
 export async function deleteCommunityComment(supabase: TypedClient, commentId: string): Promise<void> {
   const { error } = await supabase.from('community_comments').delete().eq('id', commentId)
   if (error) throw error
+}
+
+// ============================================================
+// Structured Peer Review — "request a review" flow
+// ============================================================
+
+function rowToPostReview(row: Database['public']['Tables']['post_reviews']['Row'], currentUserId: string): CommunityPostReview {
+  return {
+    id: row.id,
+    postId: row.post_id,
+    reviewerId: row.reviewer_id,
+    reviewerDisplayName: row.reviewer_display_name,
+    dimension: row.dimension as ScoreDimension,
+    rating: row.rating,
+    whatWorked: row.what_worked,
+    suggestion: row.suggestion,
+    isOwn: row.reviewer_id === currentUserId,
+    createdAt: new Date(row.created_at ?? Date.now()),
+  }
+}
+
+export async function getPostReviews(supabase: TypedClient, postId: string, currentUserId: string): Promise<CommunityPostReview[]> {
+  const { data, error } = await supabase
+    .from('post_reviews')
+    .select('*')
+    .eq('post_id', postId)
+    .order('created_at', { ascending: true })
+  if (error || !data) return []
+  return data.map((row) => rowToPostReview(row, currentUserId))
+}
+
+export async function addPostReview(
+  supabase: TypedClient,
+  review: {
+    postId: string
+    reviewerId: string
+    reviewerDisplayName: string
+    dimension: ScoreDimension
+    rating: number
+    whatWorked: string
+    suggestion: string
+  }
+): Promise<string> {
+  const { data, error } = await supabase
+    .from('post_reviews')
+    .insert({
+      post_id: review.postId,
+      reviewer_id: review.reviewerId,
+      reviewer_display_name: review.reviewerDisplayName,
+      dimension: review.dimension,
+      rating: review.rating,
+      what_worked: review.whatWorked,
+      suggestion: review.suggestion,
+    })
+    .select('id')
+    .single()
+  if (error || !data) throw error ?? new Error('Failed to submit review')
+  return data.id
+}
+
+export async function deletePostReview(supabase: TypedClient, reviewId: string): Promise<void> {
+  const { error } = await supabase.from('post_reviews').delete().eq('id', reviewId)
+  if (error) throw error
+}
+
+// ============================================================
+// Feedback Follow-up Q&A — chat tied to one score (+ dimension)
+// ============================================================
+
+function rowToFeedbackQAMessage(row: Database['public']['Tables']['feedback_qa_messages']['Row']): FeedbackQAMessage {
+  return {
+    id: row.id,
+    scoreId: row.score_id,
+    userId: row.user_id,
+    dimension: (row.dimension as ScoreDimension) ?? undefined,
+    role: row.role as FeedbackQAMessage['role'],
+    content: row.content,
+    createdAt: new Date(row.created_at ?? Date.now()),
+  }
+}
+
+/**
+ * Rate limit for the follow-up Q&A chat — counts this user's questions
+ * (role='user' rows) across all scores in the last hour, same pattern
+ * as getRecentScoreCount above.
+ */
+export async function getRecentFeedbackQACount(supabase: TypedClient, userId: string): Promise<number> {
+  const oneHourAgo = new Date(Date.now() - 3_600_000).toISOString()
+  const { count, error } = await supabase
+    .from('feedback_qa_messages')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('role', 'user')
+    .gte('created_at', oneHourAgo)
+  if (error) return 0
+  return count ?? 0
+}
+
+export async function getFeedbackQAMessages(
+  supabase: TypedClient,
+  scoreId: string,
+  dimension: ScoreDimension | undefined
+): Promise<FeedbackQAMessage[]> {
+  let query = supabase.from('feedback_qa_messages').select('*').eq('score_id', scoreId)
+  query = dimension ? query.eq('dimension', dimension) : query.is('dimension', null)
+  const { data, error } = await query.order('created_at', { ascending: true })
+  if (error || !data) return []
+  return data.map(rowToFeedbackQAMessage)
 }
 
 // ============================================================

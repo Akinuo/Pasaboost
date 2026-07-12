@@ -12,6 +12,7 @@ import { exportScoreToPDF } from '@/lib/pdfExport'
 import { useAuth } from '@/components/providers/AuthProvider'
 import SharePostModal from '@/components/community/SharePostModal'
 import RevisionDiff from '@/components/editor/RevisionDiff'
+import FeedbackChat from '@/components/score/FeedbackChat'
 import type { EssayScore, RubricScore, GrammarIssue, ScoreDimension } from '@/types'
 
 export default function ScoreResultPage({ params }: { params: Promise<{ scoreId: string }> }) {
@@ -161,6 +162,7 @@ export default function ScoreResultPage({ params }: { params: Promise<{ scoreId:
             <div className="md:col-span-2 bg-card border border-border rounded-lg p-5">
               <h3 className="font-display font-semibold text-foreground mb-3">Overall Feedback</h3>
               <p className="text-muted-foreground leading-relaxed text-sm">{score.overallFeedback}</p>
+              <FeedbackChat scoreId={score.id} />
             </div>
 
             <div className="bg-card border border-border rounded-lg p-5">
@@ -252,6 +254,7 @@ export default function ScoreResultPage({ params }: { params: Promise<{ scoreId:
                     </div>
                   )}
                 </div>
+                <FeedbackChat scoreId={score.id} dimension={r.dimension} label={r.dimension} />
               </div>
             ))}
           </motion.div>
