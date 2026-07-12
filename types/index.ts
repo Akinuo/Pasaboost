@@ -108,6 +108,7 @@ export interface EssayScore {
   examMode: boolean // whether this was written under Timed Exam Mode
   timeLimitSeconds?: number // the limit that was set for the attempt
   timeTakenSeconds?: number // how long the student actually took (capped at timeLimitSeconds)
+  revisedFromScoreId?: string // if this score is a resubmission after revising, points at the original score
 }
 
 export interface ScoreDataPoint {
@@ -302,4 +303,42 @@ export interface RegisterFormValues {
   password: string
   confirmPassword: string
   agreeToTerms: true
+}
+
+// ============================================================
+// Weakness-Targeted Drill Mode
+// Short, single-dimension exercises — distinct from the full
+// 5-dimension essay flow. Each dimension has its own exercise
+// shape (e.g. Grammar = fix a messy paragraph, Argument = write
+// just a thesis + one supporting reason), scored on just that
+// one dimension for a faster feedback loop.
+// ============================================================
+
+export interface DrillExercise {
+  dimension: ScoreDimension
+  instructions: string
+  seedText?: string // for exercises that give the student something to work with/fix (e.g. Grammar)
+  minWords: number
+  maxWords: number
+}
+
+export interface DrillAttempt {
+  id: string
+  userId: string
+  dimension: ScoreDimension
+  exercisePrompt: string
+  response: string
+  wordCount: number
+  score: number // 1-20
+  feedback: string
+  tip?: string
+  createdAt: Date
+}
+
+export interface DrillScoreResponse {
+  success: boolean
+  score?: number
+  feedback?: string
+  tip?: string
+  error?: string
 }

@@ -3,7 +3,7 @@
 import { use, useEffect, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { ArrowLeft, CheckCircle, XCircle, Lightbulb, ArrowUpDown, Star, PenLine, Share2, Download, ShieldCheck, ShieldAlert, ShieldQuestion, FileText, LayoutGrid, SpellCheck2, GitBranch, MessageSquareText, Users } from 'lucide-react'
+import { ArrowLeft, CheckCircle, XCircle, Lightbulb, ArrowUpDown, Star, PenLine, Share2, Download, ShieldCheck, ShieldAlert, ShieldQuestion, FileText, LayoutGrid, SpellCheck2, GitBranch, MessageSquareText, Users, GitCompare } from 'lucide-react'
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, Tooltip } from 'recharts'
 import { createClient } from '@/lib/supabase/client'
 import { getScore, getProfile } from '@/lib/queries'
@@ -11,14 +11,16 @@ import { getScoreColor, getScoreBgColor, getScoreLabel, getDimensionColor, forma
 import { exportScoreToPDF } from '@/lib/pdfExport'
 import { useAuth } from '@/components/providers/AuthProvider'
 import SharePostModal from '@/components/community/SharePostModal'
+import RevisionDiff from '@/components/editor/RevisionDiff'
 import type { EssayScore, RubricScore, GrammarIssue, ScoreDimension } from '@/types'
 
 export default function ScoreResultPage({ params }: { params: Promise<{ scoreId: string }> }) {
   const { scoreId } = use(params)
   const { user } = useAuth()
   const [score, setScore] = useState<EssayScore | null>(null)
+  const [originalScore, setOriginalScore] = useState<EssayScore | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'overview' | 'feedback' | 'rewrites' | 'essay' | 'integrity'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'feedback' | 'rewrites' | 'essay' | 'integrity' | 'revision'>('overview')
   const [shareModalOpen, setShareModalOpen] = useState(false)
   const [displayName, setDisplayName] = useState('Student')
 
@@ -29,6 +31,14 @@ export default function ScoreResultPage({ params }: { params: Promise<{ scoreId:
       setLoading(false)
     })
   }, [scoreId])
+
+  // If this score was a revision of an earlier one, fetch the original
+  // essay so we can show a before/after diff.
+  useEffect(() => {
+    if (!score?.revisedFromScoreId) return
+    const supabase = createClient()
+    getScore(supabase, score.revisedFromScoreId).then(setOriginalScore)
+  }, [score?.revisedFromScoreId])
 
   useEffect(() => {
     if (!user) return
@@ -49,13 +59,14 @@ export default function ScoreResultPage({ params }: { params: Promise<{ scoreId:
   }
 
   const radarData = score.rubricScores.map((r) => ({ dimension: r.dimension, score: r.score, fullMark: 20 }))
-  const tabs = [
+  const tabs: { id: 'overview' | 'feedback' | 'rewrites' | 'essay' | 'integrity' | 'revision'; label: string }[] = [
     { id: 'overview', label: 'Overview' },
     { id: 'feedback', label: 'Feedback' },
     { id: 'rewrites', label: 'Rewrites' },
     { id: 'essay', label: 'My Essay' },
     { id: 'integrity', label: 'Integrity' },
-  ] as const
+    ...(originalScore ? [{ id: 'revision' as const, label: 'Revision' }] : []),
+  ]
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -399,6 +410,50 @@ export default function ScoreResultPage({ params }: { params: Promise<{ scoreId:
             )}
           </motion.div>
         )}
+
+        {activeTab === 'revision' && originalScore && (
+          <motion.div className="space-y-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <div className="bg-card border border-border rounded-lg p-5">
+              <h3 className="font-display font-semibold text-foreground mb-4">Score Change</h3>
+              <div className="flex items-center gap-4 mb-4">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Before</p>
+                  <p className="text-2xl font-bold text-foreground">{originalScore.totalScore}<span className="text-sm text-muted-foreground">/100</span></p>
+                </div>
+                <ArrowUpDown size={16} className="text-muted-foreground rotate-90" />
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">After</p>
+                  <p className={`text-2xl font-bold ${score.totalScore > originalScore.totalScore ? 'score-good' : score.totalScore < originalScore.totalScore ? 'score-poor' : 'text-foreground'}`}>
+                    {score.totalScore}<span className="text-sm text-muted-foreground">/100</span>
+                  </p>
+                </div>
+                <span className={`text-sm font-semibold ${score.totalScore > originalScore.totalScore ? 'score-good' : score.totalScore < originalScore.totalScore ? 'score-poor' : 'text-muted-foreground'}`}>
+                  {score.totalScore > originalScore.totalScore ? '+' : ''}{score.totalScore - originalScore.totalScore} points
+                </span>
+              </div>
+              <div className="grid grid-cols-5 gap-2">
+                {score.rubricScores.map((r) => {
+                  const before = originalScore.rubricScores.find((o) => o.dimension === r.dimension)?.score ?? 0
+                  const delta = r.score - before
+                  return (
+                    <div key={r.dimension} className="text-center">
+                      <p className="text-[10px] text-muted-foreground mb-1">{r.dimension}</p>
+                      <p className="text-sm font-semibold text-foreground">{r.score}/20</p>
+                      {delta !== 0 && (
+                        <p className={`text-[10px] ${delta > 0 ? 'score-good' : 'score-poor'}`}>{delta > 0 ? '+' : ''}{delta}</p>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="bg-card border border-border rounded-lg p-5">
+              <h3 className="font-display font-semibold text-foreground mb-3">What Changed</h3>
+              <RevisionDiff original={originalScore.essay} revised={score.essay} />
+            </div>
+          </motion.div>
+        )}
       </div>
 
       <div className="flex items-center justify-between mt-8 pt-6 border-t border-border flex-wrap gap-3">
@@ -416,10 +471,16 @@ export default function ScoreResultPage({ params }: { params: Promise<{ scoreId:
             Share to Community
           </button>
         </div>
-        <Link href="/editor" className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-colors text-sm">
-          <PenLine size={15} />
-          Write Another Essay
-        </Link>
+        <div className="flex gap-2">
+          <Link href={`/editor?reviseScoreId=${score.id}`} className="flex items-center gap-2 px-5 py-2.5 border border-border rounded-lg font-semibold hover:bg-accent transition-colors text-sm">
+            <GitCompare size={15} />
+            Revise This Essay
+          </Link>
+          <Link href="/editor" className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-colors text-sm">
+            <PenLine size={15} />
+            Write Another Essay
+          </Link>
+        </div>
       </div>
 
       {user && (

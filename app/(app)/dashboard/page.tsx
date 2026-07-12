@@ -124,7 +124,7 @@ export default function DashboardPage() {
             <strong>{weakest.averageScore.toFixed(1)}/20</strong> across your last {weakest.sampleSize} essays —{' '}
             {DIMENSION_DESCRIPTIONS[weakest.dimension]}.
           </p>
-          <p className="text-xs text-muted-foreground mb-4">Here are prompts picked to stress that dimension:</p>
+          <p className="text-xs text-muted-foreground mb-4">Here are prompts picked to stress that dimension, or try a quick <Link href="/drill" className="text-primary hover:underline">focused drill</Link> instead:</p>
           <div className="grid sm:grid-cols-3 gap-3">
             {weakestPrompts.map((p) => (
               <Link

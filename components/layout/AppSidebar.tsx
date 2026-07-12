@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, PenLine, History, BarChart3, Lightbulb, Trophy, User, Users,
-  LogOut, X, Sun, Moon, Monitor, ChevronDown,
+  LogOut, X, Sun, Moon, Monitor, ChevronDown, Crosshair,
 } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useTheme } from '@/components/providers/ThemeProvider'
@@ -16,6 +16,7 @@ import NotificationBell from '@/components/layout/NotificationBell'
 const NAV_ITEMS = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/editor', icon: PenLine, label: 'Write Essay' },
+  { href: '/drill', icon: Crosshair, label: 'Drill Mode' },
   { href: '/history', icon: History, label: 'My Essays' },
   { href: '/analytics', icon: BarChart3, label: 'Analytics' },
   { href: '/prompts', icon: Lightbulb, label: 'Prompts' },

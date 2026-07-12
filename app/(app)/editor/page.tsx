@@ -6,16 +6,17 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Save, Send, Trash2, ChevronDown, Clock, FileText, Lightbulb,
   AlertCircle, CheckCircle, Loader2, RotateCcw, ShieldCheck,
-  Sparkles, X, ScanSearch, SpellCheck2, Timer, Play,
+  Sparkles, X, ScanSearch, SpellCheck2, Timer, Play, GitCompare,
 } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { createClient } from '@/lib/supabase/client'
-import { saveDraft, updateDraft, getUserDrafts, deleteDraft, getDraft, getProfile, getUserScores, getUserStats, syncLeaderboardEntries } from '@/lib/queries'
+import { saveDraft, updateDraft, getUserDrafts, deleteDraft, getDraft, getProfile, getUserScores, getUserStats, syncLeaderboardEntries, getScore } from '@/lib/queries'
 import { scoreEssayViaAPI, generateMockScore } from '@/lib/scoreApi'
 import { checkIntegrityViaAPI } from '@/lib/integrityApi'
 import { generateOutlineViaAPI } from '@/lib/outlineApi'
 import { checkGrammarViaAPI } from '@/lib/grammarApi'
 import GrammarHighlightedTextarea from '@/components/editor/GrammarHighlightedTextarea'
+import RevisionDiff from '@/components/editor/RevisionDiff'
 import { countWords, debounce, EXAM_DESCRIPTIONS, getAIPenalty, getScoreBand, SUGGESTED_EXAM_TIME_MINUTES, formatTimer } from '@/lib/utils'
 import type { ExamType, EssayDraft, AIDetectionResult, OriginalityResult, EssayOutline, GrammarIssue } from '@/types'
 
@@ -39,6 +40,16 @@ function EssayEditorInner() {
   })
   const [prompt, setPrompt] = useState(() => searchParams.get('prompt') || '')
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(searchParams.get('draftId'))
+
+  // Revision flow: arriving from a score page's "Revise This Essay" button.
+  // Loads the original essay as a starting point for a NEW draft (so the
+  // original score/draft stays untouched) and remembers which score this
+  // is a revision of, so the resulting new score can link back to it for
+  // the before/after diff on the score page.
+  const [revisedFromScoreId] = useState<string | null>(searchParams.get('reviseScoreId'))
+  const [originalEssayForRevision, setOriginalEssayForRevision] = useState<string | null>(null)
+  const [showRevisionDiff, setShowRevisionDiff] = useState(false)
+  const [diffSnapshot, setDiffSnapshot] = useState('')
 
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -79,6 +90,28 @@ function EssayEditorInner() {
   // auto-submit, so a student is never stuck unable to start over.
   const examLocked = examModeActive && !examTimeUp
   const charCount = content.length
+
+  useEffect(() => {
+    if (!revisedFromScoreId) return
+    getScore(supabase, revisedFromScoreId).then((original) => {
+      if (!original) return
+      setOriginalEssayForRevision(original.essay)
+      setContent(original.essay)
+      setPrompt(original.prompt || '')
+      setExamType(original.examType)
+      setTitle('Revised Essay')
+      setShowPromptPanel(!!original.prompt)
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [revisedFromScoreId])
+
+  // Debounced snapshot of `content` for the diff panel — avoids recomputing
+  // the O(n*m) word diff on every keystroke while the panel is open.
+  useEffect(() => {
+    if (!showRevisionDiff) return
+    const t = setTimeout(() => setDiffSnapshot(content), 600)
+    return () => clearTimeout(t)
+  }, [content, showRevisionDiff])
 
   useEffect(() => {
     if (!currentDraftId) return
@@ -353,6 +386,7 @@ function EssayEditorInner() {
           exam_mode: examModeActive,
           time_limit_seconds: examModeActive ? examTimeLimitMinutes * 60 : null,
           time_taken_seconds: timeTakenSeconds != null ? Math.round(timeTakenSeconds) : null,
+          revised_from_score_id: revisedFromScoreId,
         } as any)
         .select('id')
         .single()
@@ -658,6 +692,31 @@ function EssayEditorInner() {
       {examTimeUp && wordCount < 10 && (
         <div className="mb-4 px-4 py-3 rounded-lg border border-destructive/30 bg-destructive/5 text-sm text-destructive">
           Time&apos;s up — too little was written to score. You can review your notes and try another timed attempt when ready.
+        </div>
+      )}
+
+      {originalEssayForRevision && (
+        <div className="mb-4 p-4 rounded-lg bg-primary/5 border border-primary/20">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <p className="text-sm text-foreground">
+              <GitCompare size={14} className="inline mr-1.5 -mt-0.5 text-primary" />
+              Revising a previous submission — your original stays untouched; this will save as a new essay.
+            </p>
+            <button
+              onClick={() => {
+                setShowRevisionDiff((v) => !v)
+                if (!showRevisionDiff) setDiffSnapshot(content)
+              }}
+              className="text-xs font-medium text-primary hover:underline shrink-0"
+            >
+              {showRevisionDiff ? 'Hide changes' : 'Show changes so far'}
+            </button>
+          </div>
+          {showRevisionDiff && (
+            <div className="mt-3">
+              <RevisionDiff original={originalEssayForRevision} revised={diffSnapshot} />
+            </div>
+          )}
         </div>
       )}
 

@@ -369,6 +369,45 @@ export type Database = {
         }
         Relationships: []
       }
+      drill_attempts: {
+        Row: {
+          id: string
+          user_id: string
+          dimension: string
+          exercise_prompt: string
+          response: string
+          word_count: number | null
+          score: number
+          feedback: string
+          tip: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          dimension: string
+          exercise_prompt: string
+          response: string
+          word_count?: number | null
+          score: number
+          feedback?: string
+          tip?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          dimension?: string
+          exercise_prompt?: string
+          response?: string
+          word_count?: number | null
+          score?: number
+          feedback?: string
+          tip?: string | null
+          created_at?: string | null
+        }
+        Relationships: []
+      }
       scores: {
         Row: {
           ai_explanation: string | null
@@ -395,6 +434,7 @@ export type Database = {
           ai_penalty_applied: number
           prompt: string | null
           readability_score: number | null
+          revised_from_score_id: string | null
           rubric_scores: Json
           strengths: Json | null
           suggestions: Json | null
@@ -430,6 +470,7 @@ export type Database = {
           ai_penalty_applied?: number
           prompt?: string | null
           readability_score?: number | null
+          revised_from_score_id?: string | null
           rubric_scores: Json
           strengths?: Json | null
           suggestions?: Json | null
@@ -465,6 +506,7 @@ export type Database = {
           ai_penalty_applied?: number
           prompt?: string | null
           readability_score?: number | null
+          revised_from_score_id?: string | null
           rubric_scores?: Json
           strengths?: Json | null
           suggestions?: Json | null
@@ -488,6 +530,13 @@ export type Database = {
             columns: ["originality_matched_essay_id"]
             isOneToOne: false
             referencedRelation: "drafts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scores_revised_from_score_id_fkey"
+            columns: ["revised_from_score_id"]
+            isOneToOne: false
+            referencedRelation: "scores"
             referencedColumns: ["id"]
           },
         ]

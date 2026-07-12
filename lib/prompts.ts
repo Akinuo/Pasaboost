@@ -3,7 +3,7 @@
 // Static content — no database round-trip needed.
 // ============================================================
 
-import type { WritingPrompt, PromptCategory, ExamType, ScoreDimension } from '@/types'
+import type { WritingPrompt, PromptCategory, ExamType, ScoreDimension, DrillExercise } from '@/types'
 
 export const WRITING_PROMPTS: WritingPrompt[] = [
   {
@@ -259,3 +259,97 @@ export const PROMPT_CATEGORIES: PromptCategory[] = [
   'Health',
   'Government & Politics',
 ]
+
+// ============================================================
+// Weakness-Targeted Drill Mode
+// Short, single-dimension exercises — a few minutes each, not a
+// full essay. Each dimension gets its own exercise shape since
+// "practice this dimension in isolation" means something
+// different for Grammar (fix a messy paragraph) than it does for
+// Argument (write just a thesis + one reason).
+// ============================================================
+
+const DRILL_EXERCISES: Record<ScoreDimension, Omit<DrillExercise, 'dimension'>[]> = {
+  Content: [
+    {
+      instructions:
+        'Pick a position on this prompt and support it with three specific, concrete pieces of evidence (real statistics, named programs/laws, or specific events — not vague generalities): "Should the Philippines prioritize disaster preparedness spending over economic stimulus after a major typhoon?"',
+      minWords: 60,
+      maxWords: 150,
+    },
+    {
+      instructions:
+        'Write a short paragraph giving three specific, concrete examples (not generalities) that support this claim: "Filipino youth are more civically engaged than the previous generation."',
+      minWords: 60,
+      maxWords: 150,
+    },
+  ],
+  Organization: [
+    {
+      instructions:
+        'Write ONE well-structured body paragraph — topic sentence, supporting evidence, explanation, closing sentence — on: "The biggest challenge facing Philippine public education today."',
+      minWords: 80,
+      maxWords: 160,
+    },
+    {
+      instructions:
+        'Write a strong introduction paragraph (hook, context, clear thesis) for an essay on: "Should jeepney modernization be accelerated by the national government?"',
+      minWords: 60,
+      maxWords: 130,
+    },
+  ],
+  Grammar: [
+    {
+      instructions: 'Rewrite the paragraph below, fixing every grammar, punctuation, and spelling error you find. Keep the meaning the same.',
+      seedText:
+        "The government have many program for help the poor familys but most of it dont reach the people who really needs it. This is because of corruption and also because the process for apply are too complicated for ordinary citizen to understand it. If the government simplify the requirement, more people will able to benefit from this program.",
+      minWords: 40,
+      maxWords: 120,
+    },
+    {
+      instructions: 'Rewrite the paragraph below, fixing every grammar, punctuation, and spelling error you find. Keep the meaning the same.',
+      seedText:
+        "Social media have change the way Filipino communicate with each other, specially during typhoon and other disaster. People uses it to ask for help, sharing information, and also to donate for the victims. However, it also become a place where fake news spreads quick, which make the situation worst instead of better.",
+      minWords: 40,
+      maxWords: 120,
+    },
+  ],
+  Coherence: [
+    {
+      instructions:
+        'Rewrite the disconnected sentences below as a single flowing paragraph, adding transitions so the ideas connect logically.',
+      seedText:
+        "OFWs send billions of dollars home every year. Many families depend entirely on this money. Some economists worry this creates long-term problems. The Philippine economy has grown used to relying on remittances instead of building local jobs. Not everyone agrees this is a bad thing.",
+      minWords: 60,
+      maxWords: 150,
+    },
+    {
+      instructions:
+        'Rewrite the disconnected sentences below as a single flowing paragraph, adding transitions so the ideas connect logically.',
+      seedText:
+        "K-12 added two more years to basic education. Critics say the program was rushed. Supporters point to better alignment with international standards. Many families struggled with the added cost of two extra years. The debate over K-12's effectiveness continues today.",
+      minWords: 60,
+      maxWords: 150,
+    },
+  ],
+  Argument: [
+    {
+      instructions:
+        'Write a clear one-sentence thesis and ONE strong supporting reason (with a specific example) for this claim: "Universal Health Care in the Philippines should be fully funded before other social programs."',
+      minWords: 50,
+      maxWords: 120,
+    },
+    {
+      instructions:
+        'Write a clear one-sentence thesis, one supporting reason, and one sentence acknowledging (then countering) the strongest opposing view on: "Should the Philippines make voting mandatory?"',
+      minWords: 60,
+      maxWords: 140,
+    },
+  ],
+}
+
+export function getDrillExercise(dimension: ScoreDimension): DrillExercise {
+  const pool = DRILL_EXERCISES[dimension]
+  const pick = pool[Math.floor(Math.random() * pool.length)]
+  return { dimension, ...pick }
+}

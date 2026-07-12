@@ -122,6 +122,63 @@ export function getWeakestDimension(
 // Text utilities
 // ============================================================
 
+// ============================================================
+// Word-level diff (for Revision Diffing)
+// Classic LCS-based diff over word tokens. Runs on-demand (e.g. a
+// button click), not on every keystroke — O(n*m) is fine for a
+// single essay-sized comparison but not for live typing.
+// ============================================================
+
+export type DiffToken = { type: 'same' | 'added' | 'removed'; text: string }
+
+export function diffWords(oldText: string, newText: string): DiffToken[] {
+  // Keep the whitespace/punctuation attached to each token so the
+  // rendered diff reads naturally (splitting purely on spaces loses
+  // newlines between paragraphs).
+  const oldTokens = oldText.split(/(\s+)/).filter((t) => t.length > 0)
+  const newTokens = newText.split(/(\s+)/).filter((t) => t.length > 0)
+
+  const n = oldTokens.length
+  const m = newTokens.length
+
+  // dp[i][j] = length of the LCS of oldTokens[i:] and newTokens[j:]
+  const dp: Int32Array[] = Array.from({ length: n + 1 }, () => new Int32Array(m + 1))
+  for (let i = n - 1; i >= 0; i--) {
+    for (let j = m - 1; j >= 0; j--) {
+      dp[i][j] = oldTokens[i] === newTokens[j]
+        ? dp[i + 1][j + 1] + 1
+        : Math.max(dp[i + 1][j], dp[i][j + 1])
+    }
+  }
+
+  const result: DiffToken[] = []
+  let i = 0, j = 0
+  while (i < n && j < m) {
+    if (oldTokens[i] === newTokens[j]) {
+      result.push({ type: 'same', text: oldTokens[i] })
+      i++; j++
+    } else if (dp[i + 1][j] >= dp[i][j + 1]) {
+      result.push({ type: 'removed', text: oldTokens[i] })
+      i++
+    } else {
+      result.push({ type: 'added', text: newTokens[j] })
+      j++
+    }
+  }
+  while (i < n) { result.push({ type: 'removed', text: oldTokens[i] }); i++ }
+  while (j < m) { result.push({ type: 'added', text: newTokens[j] }); j++ }
+
+  // Merge adjacent tokens of the same type so the rendered diff isn't
+  // one <span> per word.
+  const merged: DiffToken[] = []
+  for (const tok of result) {
+    const last = merged[merged.length - 1]
+    if (last && last.type === tok.type) last.text += tok.text
+    else merged.push({ ...tok })
+  }
+  return merged
+}
+
 export function countWords(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length
 }

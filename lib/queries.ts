@@ -11,7 +11,7 @@ import { computeLeaderboardRows, OVERALL_LEADERBOARD_KEY } from '@/lib/utils'
 import type {
   EssayDraft, EssayScore, UserStats, UserProfile,
   LeaderboardEntry, ScoreDataPoint, ExamType, RubricScore, WritingPrompt,
-  CommunityPost, CommunityComment, AppNotification,
+  CommunityPost, CommunityComment, AppNotification, DrillAttempt, ScoreDimension,
 } from '@/types'
 
 type TypedClient = SupabaseClient<Database>
@@ -78,6 +78,7 @@ function rowToScore(row: Database['public']['Tables']['scores']['Row']): EssaySc
     examMode: (row as any).exam_mode ?? false,
     timeLimitSeconds: (row as any).time_limit_seconds ?? undefined,
     timeTakenSeconds: (row as any).time_taken_seconds ?? undefined,
+    revisedFromScoreId: (row as any).revised_from_score_id ?? undefined,
   }
 }
 
@@ -625,4 +626,91 @@ export async function markAllNotificationsRead(supabase: TypedClient, userId: st
     .eq('recipient_id', userId)
     .eq('is_read', false)
   if (error) throw error
+}
+
+// ============================================================
+// Weakness-Targeted Drill Mode
+// ============================================================
+
+function rowToDrillAttempt(row: Database['public']['Tables']['drill_attempts']['Row']): DrillAttempt {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    dimension: row.dimension as ScoreDimension,
+    exercisePrompt: row.exercise_prompt,
+    response: row.response,
+    wordCount: row.word_count ?? 0,
+    score: row.score,
+    feedback: row.feedback,
+    tip: row.tip ?? undefined,
+    createdAt: new Date(row.created_at ?? Date.now()),
+  }
+}
+
+export async function saveDrillAttempt(
+  supabase: TypedClient,
+  attempt: {
+    userId: string
+    dimension: ScoreDimension
+    exercisePrompt: string
+    response: string
+    wordCount: number
+    score: number
+    feedback: string
+    tip?: string
+  }
+): Promise<string> {
+  const { data, error } = await supabase
+    .from('drill_attempts')
+    .insert({
+      user_id: attempt.userId,
+      dimension: attempt.dimension,
+      exercise_prompt: attempt.exercisePrompt,
+      response: attempt.response,
+      word_count: attempt.wordCount,
+      score: attempt.score,
+      feedback: attempt.feedback,
+      tip: attempt.tip,
+    })
+    .select('id')
+    .single()
+
+  if (error || !data) throw error ?? new Error('Failed to save drill attempt')
+  return data.id
+}
+
+export async function getDrillHistory(
+  supabase: TypedClient,
+  userId: string,
+  options?: { dimension?: ScoreDimension; limit?: number }
+): Promise<DrillAttempt[]> {
+  let query = supabase
+    .from('drill_attempts')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(options?.limit ?? 20)
+
+  if (options?.dimension) {
+    query = query.eq('dimension', options.dimension)
+  }
+
+  const { data, error } = await query
+  if (error || !data) return []
+  return data.map(rowToDrillAttempt)
+}
+
+/**
+ * Rate limit for drill attempts — same zero-infra pattern as
+ * getRecentScoreCount, just against drill_attempts instead of scores.
+ */
+export async function getRecentDrillCount(supabase: TypedClient, userId: string): Promise<number> {
+  const oneHourAgo = new Date(Date.now() - 3_600_000).toISOString()
+  const { count, error } = await supabase
+    .from('drill_attempts')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .gte('created_at', oneHourAgo)
+  if (error) return 0
+  return count ?? 0
 }
