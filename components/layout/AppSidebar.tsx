@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, PenLine, History, BarChart3, Lightbulb, Trophy, User, Users, UsersRound,
-  LogOut, X, Sun, Moon, Monitor, ChevronDown, Crosshair,
+  LogOut, X, Sun, Moon, Monitor, ChevronDown, Crosshair, Menu,
 } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useTheme } from '@/components/providers/ThemeProvider'
@@ -134,7 +134,7 @@ export default function AppSidebar({ children }: { children: React.ReactNode }) 
         </div>
       </aside>
 
-      {/* Mobile: compact panel for theme + sign out, opened from the top header */}
+      {/* Mobile / tablet: full nav sidebar, opened from the top header — replaces the old bottom tab bar */}
       <AnimatePresence>
         {sidebarOpen && (
           <>
@@ -146,13 +146,13 @@ export default function AppSidebar({ children }: { children: React.ReactNode }) 
               onClick={() => setSidebarOpen(false)}
             />
             <motion.div
-              className="fixed top-0 right-0 z-50 w-64 bg-card border-l border-border lg:hidden shadow-2xl"
-              initial={{ x: 256 }}
+              className="fixed top-0 right-0 z-50 w-72 max-w-[85vw] h-full bg-card border-l border-border lg:hidden shadow-2xl flex flex-col"
+              initial={{ x: '100%' }}
               animate={{ x: 0 }}
-              exit={{ x: 256 }}
+              exit={{ x: '100%' }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             >
-              <div className="flex items-center justify-between px-4 py-4 border-b border-border">
+              <div className="flex items-center justify-between px-4 py-4 border-b border-border flex-shrink-0">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
                     <span className="text-primary-foreground text-sm font-semibold">{displayName[0]?.toUpperCase() ?? 'U'}</span>
@@ -167,7 +167,29 @@ export default function AppSidebar({ children }: { children: React.ReactNode }) 
                 </button>
               </div>
 
-              <div className="p-4 space-y-3">
+              <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+                {NAV_ITEMS.map((item) => {
+                  const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setSidebarOpen(false)}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+                        isActive
+                          ? 'bg-primary text-primary-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                      }`}
+                      aria-current={isActive ? 'page' : undefined}
+                    >
+                      <item.icon size={18} />
+                      {item.label}
+                    </Link>
+                  )
+                })}
+              </nav>
+
+              <div className="px-4 py-4 border-t border-border space-y-3 flex-shrink-0">
                 <div className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-muted">
                   {themeOptions.map((t) => (
                     <button
@@ -207,44 +229,14 @@ export default function AppSidebar({ children }: { children: React.ReactNode }) 
               <ThemeIcon size={18} />
             </button>
             <button onClick={() => setSidebarOpen(true)} className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md hover:bg-accent" aria-label="Open menu">
-              <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground text-[11px] font-semibold">{displayName[0]?.toUpperCase() ?? 'U'}</span>
-              </div>
+              <Menu size={22} />
             </button>
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">{children}</div>
+        <main className="flex-1 overflow-y-auto" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">{children}</div>
         </main>
-
-        {/* Mobile bottom nav — Instagram-style, icon-only */}
-        <nav
-          className="lg:hidden fixed bottom-0 inset-x-0 z-40 flex items-center bg-card/95 backdrop-blur-md border-t border-border"
-          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-        >
-          {NAV_ITEMS.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="flex-1 flex flex-col items-center justify-center gap-1"
-                style={{ paddingTop: 'clamp(0.5rem, 1.5vw, 0.75rem)', paddingBottom: 'clamp(0.375rem, 1vw, 0.5rem)' }}
-                aria-label={item.label}
-                aria-current={isActive ? 'page' : undefined}
-              >
-                <item.icon
-                  size={22}
-                  strokeWidth={isActive ? 2.5 : 1.8}
-                  className={isActive ? 'text-foreground' : 'text-muted-foreground'}
-                  style={{ width: 'clamp(20px, 5.5vw, 24px)', height: 'clamp(20px, 5.5vw, 24px)' }}
-                />
-                <span className={`w-1 h-1 rounded-full transition-opacity ${isActive ? 'opacity-100 bg-foreground' : 'opacity-0'}`} />
-              </Link>
-            )
-          })}
-        </nav>
       </div>
     </div>
   )
