@@ -150,7 +150,7 @@ export default function ProfilePage() {
       </div>
 
       <motion.div className="bg-card border border-border rounded-lg p-6 mb-6 flex items-center gap-5" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="relative">
+        <div className="relative shrink-0">
           {user?.user_metadata?.avatar_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={user.user_metadata.avatar_url} alt={displayName} className="w-20 h-20 rounded-full border-2 border-border" />
@@ -254,16 +254,16 @@ export default function ProfilePage() {
                   onChange={(e) => { setAliasInput(e.target.value); setAliasError(null) }}
                   placeholder="e.g. QuietScholar_482"
                   maxLength={30}
-                  className="flex-1 px-3 py-2.5 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="flex-1 min-w-0 px-3 py-2.5 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 />
-                <button type="button" onClick={handleShuffleAlias} title="Generate a random name" className="p-2.5 rounded-lg border border-input text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
+                <button type="button" onClick={handleShuffleAlias} title="Generate a random name" className="shrink-0 p-2.5 rounded-lg border border-input text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
                   <Shuffle size={15} />
                 </button>
                 <button
                   type="button"
                   onClick={handleSaveAlias}
                   disabled={aliasSaving || aliasInput.trim() === (leaderboardAlias || '')}
-                  className="px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  className="shrink-0 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
                 >
                   {aliasSaving ? 'Saving…' : 'Save'}
                 </button>
