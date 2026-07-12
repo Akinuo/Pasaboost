@@ -155,7 +155,10 @@ export default function NewDiscussionModal({ open, onClose, onCreated, groupId, 
 
           <div className="p-5 space-y-4">
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Title</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Title</label>
+                <CharCounter length={title.length} max={120} />
+              </div>
               <input
                 type="text"
                 value={title}
@@ -167,7 +170,10 @@ export default function NewDiscussionModal({ open, onClose, onCreated, groupId, 
             </div>
 
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">What&apos;s on your mind?</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-medium text-muted-foreground">What&apos;s on your mind?</label>
+                <CharCounter length={body.length} max={5000} />
+              </div>
               <textarea
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
@@ -214,14 +220,19 @@ export default function NewDiscussionModal({ open, onClose, onCreated, groupId, 
               )}
 
               {promptMode === 'custom' && (
-                <textarea
-                  value={customPrompt}
-                  onChange={(e) => setCustomPrompt(e.target.value)}
-                  placeholder={`Write a prompt that fits ${groupName} — e.g. a topic your group cares about…`}
-                  rows={2}
-                  maxLength={500}
-                  className="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
-                />
+                <div>
+                  <div className="flex justify-end mb-1">
+                    <CharCounter length={customPrompt.length} max={500} />
+                  </div>
+                  <textarea
+                    value={customPrompt}
+                    onChange={(e) => setCustomPrompt(e.target.value)}
+                    placeholder={`Write a prompt that fits ${groupName} — e.g. a topic your group cares about…`}
+                    rows={2}
+                    maxLength={500}
+                    className="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
+                  />
+                </div>
               )}
             </div>
 
@@ -239,6 +250,15 @@ export default function NewDiscussionModal({ open, onClose, onCreated, groupId, 
         </motion.div>
       </motion.div>
     </AnimatePresence>
+  )
+}
+
+function CharCounter({ length, max }: { length: number; max: number }) {
+  const remaining = max - length
+  return (
+    <span className={`text-xs tabular-nums ${remaining <= 10 ? 'text-destructive' : 'text-muted-foreground'}`}>
+      {length}/{max}
+    </span>
   )
 }
 
