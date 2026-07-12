@@ -7,12 +7,12 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/database.types'
-import { computeLeaderboardRows, OVERALL_LEADERBOARD_KEY } from '@/lib/utils'
+import { computeLeaderboardRows, computeGroupLeaderboardRows, OVERALL_LEADERBOARD_KEY } from '@/lib/utils'
 import type {
   EssayDraft, EssayScore, UserStats, UserProfile,
   LeaderboardEntry, ScoreDataPoint, ExamType, RubricScore, WritingPrompt,
   CommunityPost, CommunityComment, AppNotification, DrillAttempt, ScoreDimension,
-  CommunityPostReview, FeedbackQAMessage,
+  CommunityPostReview, FeedbackQAMessage, StudyGroup, StudyGroupMember, GroupLeaderboardEntry,
 } from '@/types'
 
 type TypedClient = SupabaseClient<Database>
@@ -354,6 +354,110 @@ export async function renameLeaderboardAlias(supabase: TypedClient, userId: stri
 export async function removeLeaderboardEntry(supabase: TypedClient, userId: string): Promise<void> {
   const { error } = await supabase.from('leaderboard').delete().eq('user_id', userId)
   if (error) throw error
+}
+
+// ============================================================
+// Study groups
+// Small self-service groups joined via a shared invite code — see
+// supabase/migrations/0014_study_groups.sql for the schema and the
+// create_study_group / join_study_group_by_code functions this layer
+// calls into (both needed since plain SELECT on study_groups is
+// members-only, so there's no other way to resolve a code to a
+// group). A student can belong to any number of groups.
+// ============================================================
+
+function rowToStudyGroup(row: Database['public']['Tables']['study_groups']['Row']): StudyGroup {
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    inviteCode: row.invite_code,
+    createdBy: row.created_by,
+    memberCount: row.member_count,
+    createdAt: new Date(row.created_at ?? Date.now()),
+  }
+}
+
+export async function createStudyGroup(supabase: TypedClient, name: string, description?: string): Promise<StudyGroup> {
+  const { data, error } = await supabase.rpc('create_study_group', {
+    p_name: name,
+    p_description: description,
+  })
+  if (error || !data) throw error ?? new Error('Failed to create study group')
+  return rowToStudyGroup(data)
+}
+
+export async function joinStudyGroupByCode(supabase: TypedClient, inviteCode: string): Promise<StudyGroup> {
+  const { data, error } = await supabase.rpc('join_study_group_by_code', { p_invite_code: inviteCode })
+  if (error || !data) throw error ?? new Error('Failed to join study group')
+  return rowToStudyGroup(data)
+}
+
+export async function leaveStudyGroup(supabase: TypedClient, groupId: string, userId: string): Promise<void> {
+  const { error } = await supabase.from('study_group_members').delete().eq('group_id', groupId).eq('user_id', userId)
+  if (error) throw error
+}
+
+// A student's own groups, most-recently-joined first.
+export async function getUserStudyGroups(supabase: TypedClient, userId: string): Promise<StudyGroup[]> {
+  const { data: memberRows, error: memberError } = await supabase
+    .from('study_group_members')
+    .select('group_id, joined_at')
+    .eq('user_id', userId)
+    .order('joined_at', { ascending: false })
+  if (memberError || !memberRows || memberRows.length === 0) return []
+
+  const groupIds = memberRows.map((m) => m.group_id)
+  const { data: groupRows, error: groupError } = await supabase.from('study_groups').select('*').in('id', groupIds)
+  if (groupError || !groupRows) return []
+
+  const groupMap = new Map(groupRows.map((g) => [g.id, rowToStudyGroup(g)]))
+  return memberRows.map((m) => groupMap.get(m.group_id)).filter((g): g is StudyGroup => g != null)
+}
+
+export async function getStudyGroup(supabase: TypedClient, groupId: string): Promise<StudyGroup | null> {
+  const { data, error } = await supabase.from('study_groups').select('*').eq('id', groupId).single()
+  if (error || !data) return null
+  return rowToStudyGroup(data)
+}
+
+export async function getStudyGroupMembers(supabase: TypedClient, groupId: string): Promise<StudyGroupMember[]> {
+  const { data: memberRows, error } = await supabase
+    .from('study_group_members')
+    .select('user_id, joined_at')
+    .eq('group_id', groupId)
+  if (error || !memberRows || memberRows.length === 0) return []
+
+  const userIds = memberRows.map((m) => m.user_id)
+  const { data: profileRows } = await supabase.from('profiles').select('id, display_name, photo_url').in('id', userIds)
+  const profileMap = new Map((profileRows ?? []).map((p) => [p.id, p]))
+
+  return memberRows.map((m) => ({
+    userId: m.user_id,
+    displayName: profileMap.get(m.user_id)?.display_name ?? 'Student',
+    photoUrl: profileMap.get(m.user_id)?.photo_url ?? null,
+    joinedAt: new Date(m.joined_at ?? Date.now()),
+  }))
+}
+
+// Computed live from scores + profiles rather than cached, since a
+// single group is small — see computeGroupLeaderboardRows for why
+// that's a reasonable trade-off here but not for the global board.
+export async function getStudyGroupLeaderboard(
+  supabase: TypedClient,
+  groupId: string,
+  currentUserId: string,
+  examType?: ExamType
+): Promise<GroupLeaderboardEntry[]> {
+  const members = await getStudyGroupMembers(supabase, groupId)
+  if (members.length === 0) return []
+
+  const userIds = members.map((m) => m.userId)
+  let query = supabase.from('scores').select('user_id, total_score').in('user_id', userIds)
+  if (examType) query = query.eq('exam_type', examType)
+  const { data: scoreRows } = await query
+
+  return computeGroupLeaderboardRows(members, scoreRows ?? [], currentUserId)
 }
 
 // ============================================================

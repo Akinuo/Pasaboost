@@ -708,12 +708,75 @@ export type Database = {
         }
         Relationships: []
       }
+      study_groups: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          invite_code: string
+          created_by: string | null
+          member_count: number
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          invite_code: string
+          created_by?: string | null
+          member_count?: number
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          invite_code?: string
+          created_by?: string | null
+          member_count?: number
+          created_at?: string | null
+        }
+        Relationships: []
+      }
+      study_group_members: {
+        Row: {
+          group_id: string
+          user_id: string
+          joined_at: string | null
+        }
+        Insert: {
+          group_id: string
+          user_id: string
+          joined_at?: string | null
+        }
+        Update: {
+          group_id?: string
+          user_id?: string
+          joined_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "study_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_study_group: {
+        Args: { p_name: string; p_description?: string }
+        Returns: Database['public']['Tables']['study_groups']['Row']
+      }
+      join_study_group_by_code: {
+        Args: { p_invite_code: string }
+        Returns: Database['public']['Tables']['study_groups']['Row']
+      }
     }
     Enums: {
       [_ in never]: never

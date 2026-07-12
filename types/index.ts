@@ -160,6 +160,42 @@ export interface LeaderboardEntry {
   badge?: string
 }
 
+// ============================================================
+// Study groups — small, self-service, invite-code-joined groups.
+// Unlike the anonymous global leaderboard above, members already
+// know each other, so group leaderboard entries carry real display
+// names/photos instead of an alias. See lib/queries.ts and
+// supabase/migrations/0014_study_groups.sql for how these are wired.
+// ============================================================
+
+export interface StudyGroup {
+  id: string
+  name: string
+  description: string | null
+  inviteCode: string
+  createdBy: string | null
+  memberCount: number
+  createdAt: Date
+}
+
+export interface StudyGroupMember {
+  userId: string
+  displayName: string
+  photoUrl: string | null
+  joinedAt: Date
+}
+
+export interface GroupLeaderboardEntry {
+  rank: number
+  userId: string
+  displayName: string
+  photoUrl: string | null
+  averageScore: number
+  essayCount: number
+  bestScore: number
+  isYou: boolean
+}
+
 export interface ScoreEssayResponse {
   success: boolean
   score?: Omit<EssayScore, 'id' | 'createdAt'>

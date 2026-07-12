@@ -417,6 +417,74 @@ export function computeLeaderboardRows(
 }
 
 // ============================================================
+// Study group leaderboard aggregation
+// Unlike computeLeaderboardRows above, this isn't cached in a table —
+// a single group is small enough to aggregate live on every read, so
+// this just takes whatever member list + score rows the caller
+// already fetched and ranks them. Members with zero essays sort to
+// the bottom instead of tying at an average of 0, which would
+// otherwise rank "hasn't written anything yet" above someone who
+// wrote one so-so essay.
+// ============================================================
+
+export interface GroupLeaderboardMemberInput {
+  userId: string
+  displayName: string
+  photoUrl: string | null
+}
+
+export interface GroupLeaderboardScoreInput {
+  user_id: string
+  total_score: number
+}
+
+export function computeGroupLeaderboardRows(
+  members: GroupLeaderboardMemberInput[],
+  scores: GroupLeaderboardScoreInput[],
+  currentUserId: string
+): Array<{
+  rank: number
+  userId: string
+  displayName: string
+  photoUrl: string | null
+  averageScore: number
+  essayCount: number
+  bestScore: number
+  isYou: boolean
+}> {
+  const byUser = new Map<string, number[]>()
+  for (const s of scores) {
+    const list = byUser.get(s.user_id) ?? []
+    list.push(s.total_score)
+    byUser.set(s.user_id, list)
+  }
+
+  const unranked = members.map((m) => {
+    const totals = byUser.get(m.userId) ?? []
+    const essayCount = totals.length
+    return {
+      userId: m.userId,
+      displayName: m.displayName,
+      photoUrl: m.photoUrl,
+      averageScore: essayCount ? Math.round(totals.reduce((s, v) => s + v, 0) / essayCount) : 0,
+      essayCount,
+      bestScore: essayCount ? Math.max(...totals) : 0,
+      isYou: m.userId === currentUserId,
+    }
+  })
+
+  unranked.sort((a, b) => {
+    if (a.essayCount === 0 && b.essayCount === 0) return a.displayName.localeCompare(b.displayName)
+    if (a.essayCount === 0) return 1
+    if (b.essayCount === 0) return -1
+    if (b.averageScore !== a.averageScore) return b.averageScore - a.averageScore
+    return b.essayCount - a.essayCount
+  })
+
+  return unranked.map((row, idx) => ({ ...row, rank: idx + 1 }))
+}
+
+// ============================================================
 // Leaderboard alias validation — format + a light profanity filter.
 // This is the client-side copy for instant feedback; the same rules
 // are enforced again server-side by a Postgres trigger (see
