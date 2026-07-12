@@ -685,9 +685,9 @@ export async function getFeedbackQAMessages(
 }
 
 // ============================================================
-// Notifications — "someone liked / commented on your post"
-// Rows are inserted server-side by triggers (see migration 0008),
-// so this layer only ever reads and marks-as-read.
+// Notifications — "someone liked / commented / reviewed your post"
+// Rows are inserted server-side by triggers (see migrations 0008 and
+// 0013), so this layer only ever reads and marks-as-read.
 // ============================================================
 
 function rowToNotification(row: Database['public']['Tables']['notifications']['Row']): AppNotification {
@@ -700,6 +700,9 @@ function rowToNotification(row: Database['public']['Tables']['notifications']['R
     commentId: row.comment_id ?? undefined,
     postTitle: row.post_title,
     commentPreview: row.comment_preview ?? undefined,
+    reviewId: row.review_id ?? undefined,
+    reviewDimension: (row.review_dimension as AppNotification['reviewDimension']) ?? undefined,
+    reviewPreview: row.review_preview ?? undefined,
     isRead: row.is_read,
     createdAt: new Date(row.created_at ?? Date.now()),
   }

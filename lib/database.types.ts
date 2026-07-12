@@ -262,6 +262,9 @@ export type Database = {
           post_id: string
           post_title: string
           recipient_id: string
+          review_dimension: string | null
+          review_id: string | null
+          review_preview: string | null
           type: string
         }
         Insert: {
@@ -275,6 +278,9 @@ export type Database = {
           post_id: string
           post_title: string
           recipient_id: string
+          review_dimension?: string | null
+          review_id?: string | null
+          review_preview?: string | null
           type: string
         }
         Update: {
@@ -288,6 +294,9 @@ export type Database = {
           post_id?: string
           post_title?: string
           recipient_id?: string
+          review_dimension?: string | null
+          review_id?: string | null
+          review_preview?: string | null
           type?: string
         }
         Relationships: [
@@ -303,6 +312,13 @@ export type Database = {
             columns: ["post_id"]
             isOneToOne: false
             referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "post_reviews"
             referencedColumns: ["id"]
           },
         ]

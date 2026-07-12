@@ -305,7 +305,7 @@ export interface CommunityPostReview {
 // Notifications — someone liked or commented on your post
 // ============================================================
 
-export type NotificationType = 'like' | 'comment'
+export type NotificationType = 'like' | 'comment' | 'review'
 
 export interface AppNotification {
   id: string
@@ -316,6 +316,9 @@ export interface AppNotification {
   commentId?: string
   postTitle: string
   commentPreview?: string
+  reviewId?: string
+  reviewDimension?: ScoreDimension
+  reviewPreview?: string
   isRead: boolean
   createdAt: Date
 }
