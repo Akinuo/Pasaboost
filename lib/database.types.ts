@@ -460,6 +460,27 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_tool_usage: {
+        Row: {
+          id: string
+          user_id: string
+          tool: string
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          tool: string
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          tool?: string
+          created_at?: string | null
+        }
+        Relationships: []
+      }
       drill_attempts: {
         Row: {
           id: string

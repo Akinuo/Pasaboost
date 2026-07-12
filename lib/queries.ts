@@ -830,3 +830,43 @@ export async function getRecentDrillCount(supabase: TypedClient, userId: string)
   if (error) return 0
   return count ?? 0
 }
+
+// ============================================================
+// Stateless AI tool rate limiting
+// check-grammar, check-integrity, and outline don't otherwise write
+// anything to the database (no draft/score/attempt row comes out of
+// them), so unlike getRecentScoreCount/getRecentDrillCount above,
+// there's no natural table to count against. ai_tool_usage is a
+// small shared log purely for this — same zero-infra DB approach,
+// just with an explicit tool name instead of a dedicated table.
+// ============================================================
+
+export type AIToolName = 'check-grammar' | 'check-integrity' | 'outline'
+
+export async function getRecentToolUsageCount(
+  supabase: TypedClient,
+  userId: string,
+  tool: AIToolName
+): Promise<number> {
+  const oneHourAgo = new Date(Date.now() - 3_600_000).toISOString()
+  const { count, error } = await supabase
+    .from('ai_tool_usage')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('tool', tool)
+    .gte('created_at', oneHourAgo)
+  if (error) return 0
+  return count ?? 0
+}
+
+/**
+ * Logs one successful call for rate-limit accounting. Called after
+ * the AI response is ready, not before — a failed/rejected request
+ * shouldn't count against the student's quota. Fire-and-forget on
+ * error: a logging failure should never break the response the user
+ * is already waiting on.
+ */
+export async function recordToolUsage(supabase: TypedClient, userId: string, tool: AIToolName): Promise<void> {
+  const { error } = await supabase.from('ai_tool_usage').insert({ user_id: userId, tool })
+  if (error) console.error(`Failed to record ${tool} usage:`, error.message)
+}

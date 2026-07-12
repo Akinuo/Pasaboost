@@ -15,9 +15,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import Groq from 'groq-sdk'
 import { createClient } from '@/lib/supabase/server'
+import { getRecentToolUsageCount, recordToolUsage } from '@/lib/queries'
 import type { GrammarIssue, GrammarIssueType } from '@/types'
 
 export const runtime = 'nodejs'
+
+// Higher than score-essay/outline — this is meant to be run
+// continuously while drafting, not just once per essay. Still
+// capped so a runaway client loop can't hammer the Groq key.
+const MAX_REQUESTS_PER_HOUR = 40
 
 const CheckGrammarSchema = z.object({
   essay: z.string().min(50, 'Essay must be at least 50 characters').max(10000, 'Essay must be under 10,000 characters'),
@@ -95,6 +101,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: 'You must be signed in to check grammar.' }, { status: 401 })
   }
 
+  const recentCount = await getRecentToolUsageCount(supabase, user.id, 'check-grammar')
+  if (recentCount >= MAX_REQUESTS_PER_HOUR) {
+    return NextResponse.json(
+      { success: false, error: 'Too many grammar checks this hour. Please wait before trying again.' },
+      { status: 429 }
+    )
+  }
+
   let body: unknown
   try {
     body = await req.json()
@@ -119,6 +133,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const issues = await findGrammarIssues(parseResult.data.essay)
+    await recordToolUsage(supabase, user.id, 'check-grammar')
     return NextResponse.json({ success: true, issues })
   } catch (err: any) {
     console.error('Grammar check error:', err?.message || err)

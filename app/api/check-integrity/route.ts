@@ -19,10 +19,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import Groq from 'groq-sdk'
 import { createClient } from '@/lib/supabase/server'
-import { getUserScores } from '@/lib/queries'
+import { getUserScores, getRecentToolUsageCount, recordToolUsage } from '@/lib/queries'
 import type { AIDetectionResult, AIDetectionVerdict, OriginalityResult } from '@/types'
 
 export const runtime = 'nodejs'
+
+// Meant for periodic checks before submitting, not continuous
+// drafting use like check-grammar — closer to outline's cadence.
+const MAX_REQUESTS_PER_HOUR = 20
 
 const CheckSchema = z.object({
   essay: z.string().min(50, 'Essay must be at least 50 characters').max(10000, 'Essay must be under 10,000 characters'),
@@ -283,6 +287,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: 'You must be signed in to run an integrity check.' }, { status: 401 })
   }
 
+  const recentCount = await getRecentToolUsageCount(supabase, user.id, 'check-integrity')
+  if (recentCount >= MAX_REQUESTS_PER_HOUR) {
+    return NextResponse.json(
+      { success: false, error: 'Too many integrity checks this hour. Please wait before trying again.' },
+      { status: 429 }
+    )
+  }
+
   let body: unknown
   try {
     body = await req.json()
@@ -305,6 +317,7 @@ export async function POST(req: NextRequest) {
       checkOriginality(supabase, user.id, essay),
     ])
 
+    await recordToolUsage(supabase, user.id, 'check-integrity')
     return NextResponse.json({ success: true, aiDetection, originality })
   } catch (err: any) {
     console.error('Integrity check error:', err?.message || err)

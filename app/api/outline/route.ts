@@ -15,9 +15,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import Groq from 'groq-sdk'
 import { createClient } from '@/lib/supabase/server'
+import { getRecentToolUsageCount, recordToolUsage } from '@/lib/queries'
 import type { EssayOutline } from '@/types'
 
 export const runtime = 'nodejs'
+
+// Students typically brainstorm an outline once or twice per essay,
+// not continuously like check-grammar — so a lower ceiling.
+const MAX_REQUESTS_PER_HOUR = 15
 
 const OutlineSchema = z.object({
   prompt: z.string().min(5, 'Prompt must be at least 5 characters').max(500),
@@ -88,6 +93,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: 'You must be signed in to use the outline assistant.' }, { status: 401 })
   }
 
+  const recentCount = await getRecentToolUsageCount(supabase, user.id, 'outline')
+  if (recentCount >= MAX_REQUESTS_PER_HOUR) {
+    return NextResponse.json(
+      { success: false, error: 'Too many outline requests this hour. Please wait before trying again.' },
+      { status: 429 }
+    )
+  }
+
   let body: unknown
   try {
     body = await req.json()
@@ -112,6 +125,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const outline = await generateOutline(parseResult.data.prompt, parseResult.data.examType)
+    await recordToolUsage(supabase, user.id, 'outline')
     return NextResponse.json({ success: true, outline })
   } catch (err: any) {
     console.error('Outline generation error:', err?.message || err)
