@@ -1,15 +1,16 @@
 'use client'
 
-import { use, useCallback, useEffect, useState } from 'react'
+import { use, useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Clock, Send, Loader2, Trash2, Sparkles, PenLine, MessagesSquare } from 'lucide-react'
+import { ArrowLeft, Clock, Send, Trash2, Sparkles, PenLine, MessagesSquare, Loader2, ChevronDown } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { createClient } from '@/lib/supabase/client'
 import {
   getGroupDiscussion, getGroupDiscussionReplies, addGroupDiscussionReply,
   deleteGroupDiscussionReply, deleteGroupDiscussion, getProfile, getStudyGroup,
+  GROUP_DISCUSSION_REPLIES_PAGE_SIZE,
 } from '@/lib/queries'
 import { getRelativeTime } from '@/lib/utils'
 import type { GroupDiscussion, GroupDiscussionReply, StudyGroup } from '@/types'
@@ -22,27 +23,38 @@ export default function GroupDiscussionPage({ params }: { params: Promise<{ id: 
   const [group, setGroup] = useState<StudyGroup | null>(null)
   const [discussion, setDiscussion] = useState<GroupDiscussion | null>(null)
   const [replies, setReplies] = useState<GroupDiscussionReply[]>([])
+  const [hasMoreReplies, setHasMoreReplies] = useState(false)
+  const [loadingMoreReplies, setLoadingMoreReplies] = useState(false)
   const [loading, setLoading] = useState(true)
   const [replyText, setReplyText] = useState('')
-  const [posting, setPosting] = useState(false)
+  const [replyError, setReplyError] = useState<string | null>(null)
   const [displayName, setDisplayName] = useState('Student')
 
-  const load = useCallback(async (silent = false) => {
+  // Same reasoning as GroupDiscussions: keep a realtime-triggered reload
+  // from truncating replies the user has already paged past.
+  const loadedRepliesCountRef = useRef(GROUP_DISCUSSION_REPLIES_PAGE_SIZE)
+
+  const load = useCallback(async (silent = false, repliesLimit?: number) => {
     if (!user) return
     const supabase = createClient()
     if (!silent) setLoading(true)
     const [g, d, r] = await Promise.all([
       getStudyGroup(supabase, groupId),
       getGroupDiscussion(supabase, discussionId, user.id),
-      getGroupDiscussionReplies(supabase, discussionId, user.id),
+      getGroupDiscussionReplies(supabase, discussionId, user.id, { limit: repliesLimit ?? loadedRepliesCountRef.current }),
     ])
     setGroup(g)
     setDiscussion(d)
-    setReplies(r)
+    setReplies(r.replies)
+    setHasMoreReplies(r.hasMore)
     setLoading(false)
   }, [groupId, discussionId, user])
 
   useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    loadedRepliesCountRef.current = Math.max(replies.length, GROUP_DISCUSSION_REPLIES_PAGE_SIZE)
+  }, [replies.length])
 
   useEffect(() => {
     if (!user) return
@@ -66,14 +78,45 @@ export default function GroupDiscussionPage({ params }: { params: Promise<{ id: 
 
   const handleAddReply = async () => {
     if (!user || !replyText.trim()) return
-    setPosting(true)
+    const content = replyText.trim()
+    const tempId = `temp-${crypto.randomUUID()}`
+
+    // Optimistic append so the reply appears instantly instead of waiting
+    // on the insert + realtime round-trip. Only safe to tack it onto the
+    // end of the local list if we've already loaded the whole thread —
+    // otherwise there could be older, unfetched replies that chronologically
+    // belong between the last loaded one and this new reply.
+    const canAppendLocally = !hasMoreReplies
+    const optimisticReply: GroupDiscussionReply = {
+      id: tempId,
+      discussionId,
+      userId: user.id,
+      displayName,
+      content,
+      isOwn: true,
+      createdAt: new Date(),
+    }
+    if (canAppendLocally) setReplies((prev) => [...prev, optimisticReply])
+    setDiscussion((prev) => (prev ? { ...prev, replyCount: prev.replyCount + 1 } : prev))
+    setReplyText('')
+    setReplyError(null)
+
     const supabase = createClient()
     try {
-      await addGroupDiscussionReply(supabase, { discussionId, userId: user.id, displayName, content: replyText.trim() })
-      setReplyText('')
-      load(true)
-    } finally {
-      setPosting(false)
+      const realId = await addGroupDiscussionReply(supabase, { discussionId, userId: user.id, displayName, content })
+      if (canAppendLocally) {
+        // Swap the temp id for the real one so delete works before the next reload.
+        setReplies((prev) => prev.map((r) => (r.id === tempId ? { ...r, id: realId } : r)))
+      } else {
+        // Thread wasn't fully loaded — a plain refetch keeps ordering correct.
+        load(true)
+      }
+    } catch (err) {
+      // Roll back and give the user their text back to retry.
+      if (canAppendLocally) setReplies((prev) => prev.filter((r) => r.id !== tempId))
+      setDiscussion((prev) => (prev ? { ...prev, replyCount: Math.max(0, prev.replyCount - 1) } : prev))
+      setReplyText(content)
+      setReplyError(err instanceof Error ? err.message : 'Failed to post reply. Please try again.')
     }
   }
 
@@ -81,6 +124,18 @@ export default function GroupDiscussionPage({ params }: { params: Promise<{ id: 
     const supabase = createClient()
     await deleteGroupDiscussionReply(supabase, replyId)
     setReplies((prev) => prev.filter((r) => r.id !== replyId))
+    setDiscussion((prev) => (prev ? { ...prev, replyCount: Math.max(0, prev.replyCount - 1) } : prev))
+  }
+
+  const loadMoreReplies = async () => {
+    if (!user || !replies.length || loadingMoreReplies) return
+    setLoadingMoreReplies(true)
+    const supabase = createClient()
+    const last = replies[replies.length - 1]
+    const { replies: more, hasMore } = await getGroupDiscussionReplies(supabase, discussionId, user.id, { after: last.createdAt })
+    setReplies((prev) => [...prev, ...more])
+    setHasMoreReplies(hasMore)
+    setLoadingMoreReplies(false)
   }
 
   const handleDeleteDiscussion = async () => {
@@ -122,7 +177,7 @@ export default function GroupDiscussionPage({ params }: { params: Promise<{ id: 
             </div>
           </div>
           {discussion.isOwn && (
-            <button onClick={handleDeleteDiscussion} className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-destructive transition-colors">
+            <button onClick={handleDeleteDiscussion} className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-destructive transition-colors" aria-label="Delete discussion">
               <Trash2 size={14} />
               Delete
             </button>
@@ -144,27 +199,30 @@ export default function GroupDiscussionPage({ params }: { params: Promise<{ id: 
       <div className="rounded-lg border border-border bg-card p-5 sm:p-6">
         <h2 className="font-display font-semibold text-foreground mb-4 flex items-center gap-1.5">
           <MessagesSquare size={16} className="text-primary" />
-          Replies {replies.length > 0 && `(${replies.length})`}
+          Replies {discussion.replyCount > 0 && `(${discussion.replyCount})`}
         </h2>
 
-        <div className="flex gap-2 mb-6">
-          <input
-            type="text"
-            value={replyText}
-            onChange={(e) => setReplyText(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && !posting) handleAddReply() }}
-            placeholder="Share your take…"
-            maxLength={2000}
-            className="flex-1 px-3 py-2.5 text-sm rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
-          />
-          <button
-            onClick={handleAddReply}
-            disabled={posting || !replyText.trim()}
-            className="flex items-center justify-center px-4 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 flex-shrink-0"
-            aria-label="Post reply"
-          >
-            {posting ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
-          </button>
+        <div className="mb-6">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={replyText}
+              onChange={(e) => { setReplyText(e.target.value); if (replyError) setReplyError(null) }}
+              onKeyDown={(e) => { if (e.key === 'Enter' && replyText.trim()) handleAddReply() }}
+              placeholder="Share your take…"
+              maxLength={2000}
+              className="flex-1 px-3 py-2.5 text-sm rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
+            />
+            <button
+              onClick={handleAddReply}
+              disabled={!replyText.trim()}
+              className="flex items-center justify-center px-4 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 flex-shrink-0"
+              aria-label="Post reply"
+            >
+              <Send size={15} />
+            </button>
+          </div>
+          {replyError && <p className="text-xs text-destructive mt-1.5">{replyError}</p>}
         </div>
 
         {replies.length === 0 ? (
@@ -190,6 +248,19 @@ export default function GroupDiscussionPage({ params }: { params: Promise<{ id: 
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {hasMoreReplies && (
+          <div className="flex justify-center mt-4">
+            <button
+              onClick={loadMoreReplies}
+              disabled={loadingMoreReplies}
+              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground border border-border rounded-lg hover:bg-accent transition-colors disabled:opacity-60"
+            >
+              {loadingMoreReplies ? <Loader2 size={14} className="animate-spin" /> : <ChevronDown size={14} />}
+              {loadingMoreReplies ? 'Loading…' : 'Load more replies'}
+            </button>
           </div>
         )}
       </div>
