@@ -7,12 +7,12 @@
 // clicking a thread routes to app/(app)/groups/[id]/discussions/[discussionId].
 // ============================================================
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { MessagesSquare, Plus, Sparkles, PenLine, MessageCircle } from 'lucide-react'
+import { MessagesSquare, Plus, Sparkles, PenLine, MessageCircle, Loader2, ChevronDown } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { getGroupDiscussions } from '@/lib/queries'
+import { getGroupDiscussions, GROUP_DISCUSSIONS_PAGE_SIZE } from '@/lib/queries'
 import { getRelativeTime, truncateText } from '@/lib/utils'
 import NewDiscussionModal from '@/components/groups/NewDiscussionModal'
 import type { GroupDiscussion } from '@/types'
@@ -26,20 +26,34 @@ interface GroupDiscussionsProps {
 
 export default function GroupDiscussions({ groupId, groupName, userId, displayName }: GroupDiscussionsProps) {
   const [discussions, setDiscussions] = useState<GroupDiscussion[]>([])
+  const [hasMore, setHasMore] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
 
-  const load = useCallback(async (silent = false) => {
+  // Keeps realtime-triggered reloads from silently truncating a list the
+  // user has already paged through — refetch the same-sized window instead
+  // of resetting back to page one.
+  const loadedCountRef = useRef(GROUP_DISCUSSIONS_PAGE_SIZE)
+
+  const load = useCallback(async (silent = false, limit?: number) => {
     if (!silent) setLoading(true)
     const supabase = createClient()
-    const data = await getGroupDiscussions(supabase, groupId, userId)
+    const { discussions: data, hasMore: more } = await getGroupDiscussions(supabase, groupId, userId, {
+      limit: limit ?? loadedCountRef.current,
+    })
     setDiscussions(data)
+    setHasMore(more)
     setLoading(false)
   }, [groupId, userId])
 
   useEffect(() => {
     load()
   }, [load])
+
+  useEffect(() => {
+    loadedCountRef.current = Math.max(discussions.length, GROUP_DISCUSSIONS_PAGE_SIZE)
+  }, [discussions.length])
 
   // Realtime: new threads and reply-count changes from any member.
   useEffect(() => {
@@ -51,6 +65,17 @@ export default function GroupDiscussions({ groupId, groupName, userId, displayNa
 
     return () => { supabase.removeChannel(channel) }
   }, [groupId, load])
+
+  const loadMore = async () => {
+    if (!discussions.length || loadingMore) return
+    setLoadingMore(true)
+    const supabase = createClient()
+    const last = discussions[discussions.length - 1]
+    const { discussions: more, hasMore: moreLeft } = await getGroupDiscussions(supabase, groupId, userId, { before: last.createdAt })
+    setDiscussions((prev) => [...prev, ...more])
+    setHasMore(moreLeft)
+    setLoadingMore(false)
+  }
 
   if (loading) {
     return (
@@ -117,6 +142,19 @@ export default function GroupDiscussions({ groupId, groupName, userId, displayNa
               </Link>
             </motion.div>
           ))}
+        </div>
+      )}
+
+      {hasMore && (
+        <div className="flex justify-center mt-4">
+          <button
+            onClick={loadMore}
+            disabled={loadingMore}
+            className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground border border-border rounded-lg hover:bg-accent transition-colors disabled:opacity-60"
+          >
+            {loadingMore ? <Loader2 size={14} className="animate-spin" /> : <ChevronDown size={14} />}
+            {loadingMore ? 'Loading…' : 'Load more discussions'}
+          </button>
         </div>
       )}
 

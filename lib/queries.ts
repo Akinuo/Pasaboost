@@ -525,18 +525,27 @@ function rowToGroupDiscussion(
   }
 }
 
+export const GROUP_DISCUSSIONS_PAGE_SIZE = 20
+
 export async function getGroupDiscussions(
   supabase: TypedClient,
   groupId: string,
-  currentUserId: string
-): Promise<GroupDiscussion[]> {
-  const { data, error } = await supabase
+  currentUserId: string,
+  options?: { before?: Date; limit?: number }
+): Promise<{ discussions: GroupDiscussion[]; hasMore: boolean }> {
+  const limit = options?.limit ?? GROUP_DISCUSSIONS_PAGE_SIZE
+  let query = supabase
     .from('group_discussions')
     .select('*')
     .eq('group_id', groupId)
     .order('created_at', { ascending: false })
-  if (error || !data) return []
-  return data.map((row) => rowToGroupDiscussion(row, currentUserId))
+    .limit(limit + 1) // fetch one extra to know whether another page exists
+  if (options?.before) query = query.lt('created_at', options.before.toISOString())
+
+  const { data, error } = await query
+  if (error || !data) return { discussions: [], hasMore: false }
+  const hasMore = data.length > limit
+  return { discussions: data.slice(0, limit).map((row) => rowToGroupDiscussion(row, currentUserId)), hasMore }
 }
 
 export async function getGroupDiscussion(
@@ -583,26 +592,38 @@ export async function deleteGroupDiscussion(supabase: TypedClient, discussionId:
   if (error) throw error
 }
 
+export const GROUP_DISCUSSION_REPLIES_PAGE_SIZE = 30
+
 export async function getGroupDiscussionReplies(
   supabase: TypedClient,
   discussionId: string,
-  currentUserId: string
-): Promise<GroupDiscussionReply[]> {
-  const { data, error } = await supabase
+  currentUserId: string,
+  options?: { after?: Date; limit?: number }
+): Promise<{ replies: GroupDiscussionReply[]; hasMore: boolean }> {
+  const limit = options?.limit ?? GROUP_DISCUSSION_REPLIES_PAGE_SIZE
+  let query = supabase
     .from('group_discussion_replies')
     .select('*')
     .eq('discussion_id', discussionId)
     .order('created_at', { ascending: true })
-  if (error || !data) return []
-  return data.map((row) => ({
-    id: row.id,
-    discussionId: row.discussion_id,
-    userId: row.user_id,
-    displayName: row.display_name,
-    content: row.content,
-    isOwn: row.user_id === currentUserId,
-    createdAt: new Date(row.created_at ?? Date.now()),
-  }))
+    .limit(limit + 1)
+  if (options?.after) query = query.gt('created_at', options.after.toISOString())
+
+  const { data, error } = await query
+  if (error || !data) return { replies: [], hasMore: false }
+  const hasMore = data.length > limit
+  return {
+    replies: data.slice(0, limit).map((row) => ({
+      id: row.id,
+      discussionId: row.discussion_id,
+      userId: row.user_id,
+      displayName: row.display_name,
+      content: row.content,
+      isOwn: row.user_id === currentUserId,
+      createdAt: new Date(row.created_at ?? Date.now()),
+    })),
+    hasMore,
+  }
 }
 
 export async function addGroupDiscussionReply(
