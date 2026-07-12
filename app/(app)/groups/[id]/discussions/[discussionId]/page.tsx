@@ -67,7 +67,7 @@ export default function GroupDiscussionPage({ params }: { params: Promise<{ id: 
   const handleAddReply = async () => {
     if (!user || !replyText.trim()) return
     const content = replyText.trim()
-    const tempId = `temp-${Date.now()}`
+    const tempId = `temp-${crypto.randomUUID()}`
 
     // Optimistic append so the reply appears instantly instead of waiting
     // on the insert + realtime round-trip.
