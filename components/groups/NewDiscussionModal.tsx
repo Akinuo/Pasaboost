@@ -18,6 +18,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, MessagesSquare, Loader2, Sparkles, PenLine, Ban } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { createGroupDiscussion, getDailyGeneratedPrompts } from '@/lib/queries'
+import { todayInManila } from '@/lib/utils'
 import type { WritingPrompt } from '@/types'
 
 interface NewDiscussionModalProps {
@@ -38,19 +39,30 @@ export default function NewDiscussionModal({ open, onClose, onCreated, groupId, 
   const [promptMode, setPromptMode] = useState<PromptMode>('none')
   const [dailyPrompts, setDailyPrompts] = useState<WritingPrompt[]>([])
   const [loadingPrompts, setLoadingPrompts] = useState(false)
+  // Which Manila calendar day dailyPrompts was fetched for — lets a
+  // modal reopened after midnight tell its cache is stale and refetch,
+  // instead of showing yesterday's batch until the page reloads.
+  const [promptsFetchedDay, setPromptsFetchedDay] = useState<string | null>(null)
   const [selectedDailyId, setSelectedDailyId] = useState<string | null>(null)
   const [customPrompt, setCustomPrompt] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!open || promptMode !== 'daily' || dailyPrompts.length > 0) return
+    if (!open || promptMode !== 'daily') return
+    const today = todayInManila()
+    if (promptsFetchedDay === today) return // cache is still fresh for today
+
     setLoadingPrompts(true)
+    setSelectedDailyId(null) // yesterday's selection wouldn't map to the new batch
     const supabase = createClient()
     getDailyGeneratedPrompts(supabase, 12)
-      .then(setDailyPrompts)
+      .then((prompts) => {
+        setDailyPrompts(prompts)
+        setPromptsFetchedDay(today)
+      })
       .finally(() => setLoadingPrompts(false))
-  }, [open, promptMode, dailyPrompts.length])
+  }, [open, promptMode, promptsFetchedDay])
 
   if (!open) return null
 

@@ -6,6 +6,15 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+// Today's date in Asia/Manila, as YYYY-MM-DD — this is a Philippine
+// college-entrance-exam tool, so "today" should follow PH local time
+// rather than the device/server's (often UTC) clock. Shared between
+// the daily-prompts generation job and any client reading its output,
+// so both agree on when a new day's batch has started.
+export function todayInManila(): string {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' }) // en-CA gives YYYY-MM-DD
+}
+
 // ============================================================
 // Score utilities
 // ============================================================

@@ -18,6 +18,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Groq from 'groq-sdk'
 import { createServiceRoleClient } from '@/lib/supabase/server'
+import { todayInManila } from '@/lib/utils'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -38,12 +39,7 @@ function getGroqClient(): Groq | null {
   return new Groq({ apiKey: process.env.GROQ_API_KEY })
 }
 
-// Today's date in Asia/Manila, as YYYY-MM-DD — this is a Philippine
-// college-entrance-exam tool, so "today" should follow PH local time
-// rather than the server's (often UTC) clock.
-function todayInManila(): string {
-  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' }) // en-CA gives YYYY-MM-DD
-}
+// Today's date in Asia/Manila, as YYYY-MM-DD — see lib/utils.ts
 
 interface GeneratedPrompt {
   text: string
