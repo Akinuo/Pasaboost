@@ -177,7 +177,7 @@ export default function GroupDiscussionPage({ params }: { params: Promise<{ id: 
             </div>
           </div>
           {discussion.isOwn && (
-            <button onClick={handleDeleteDiscussion} className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-destructive transition-colors">
+            <button onClick={handleDeleteDiscussion} className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-destructive transition-colors" aria-label="Delete discussion">
               <Trash2 size={14} />
               Delete
             </button>

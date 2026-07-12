@@ -161,7 +161,7 @@ export default function CommunityPostPage({ params }: { params: Promise<{ postId
             </Link>
           )}
           {post.isOwn && (
-            <button onClick={handleDeletePost} className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-destructive transition-colors ml-auto">
+            <button onClick={handleDeletePost} className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-destructive transition-colors ml-auto" aria-label="Delete post">
               <Trash2 size={14} />
               Delete
             </button>

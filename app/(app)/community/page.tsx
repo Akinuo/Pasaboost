@@ -175,6 +175,7 @@ export default function CommunityPage() {
                   <button
                     onClick={() => handleToggleLike(post)}
                     className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${post.likedByMe ? 'text-red-500' : 'text-muted-foreground hover:text-foreground'}`}
+                    aria-label={post.likedByMe ? `Unlike (${post.likeCount} likes)` : `Like (${post.likeCount} likes)`}
                   >
                     <Heart size={16} fill={post.likedByMe ? 'currentColor' : 'none'} />
                     {post.likeCount}
@@ -187,6 +188,7 @@ export default function CommunityPage() {
                     <button
                       onClick={() => handleDelete(post.id)}
                       className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-destructive transition-colors ml-auto"
+                      aria-label="Delete post"
                     >
                       <Trash2 size={14} />
                       Delete
