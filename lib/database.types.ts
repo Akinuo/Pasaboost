@@ -259,12 +259,17 @@ export type Database = {
           created_at: string | null
           id: string
           is_read: boolean
-          post_id: string
-          post_title: string
+          post_id: string | null
+          post_title: string | null
           recipient_id: string
           review_dimension: string | null
           review_id: string | null
           review_preview: string | null
+          group_id: string | null
+          discussion_id: string | null
+          reply_id: string | null
+          discussion_title: string | null
+          reply_preview: string | null
           type: string
         }
         Insert: {
@@ -275,12 +280,17 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_read?: boolean
-          post_id: string
-          post_title: string
+          post_id?: string | null
+          post_title?: string | null
           recipient_id: string
           review_dimension?: string | null
           review_id?: string | null
           review_preview?: string | null
+          group_id?: string | null
+          discussion_id?: string | null
+          reply_id?: string | null
+          discussion_title?: string | null
+          reply_preview?: string | null
           type: string
         }
         Update: {
@@ -291,12 +301,17 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_read?: boolean
-          post_id?: string
-          post_title?: string
+          post_id?: string | null
+          post_title?: string | null
           recipient_id?: string
           review_dimension?: string | null
           review_id?: string | null
           review_preview?: string | null
+          group_id?: string | null
+          discussion_id?: string | null
+          reply_id?: string | null
+          discussion_title?: string | null
+          reply_preview?: string | null
           type?: string
         }
         Relationships: [
@@ -319,6 +334,27 @@ export type Database = {
             columns: ["review_id"]
             isOneToOne: false
             referencedRelation: "post_reviews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "study_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_discussion_id_fkey"
+            columns: ["discussion_id"]
+            isOneToOne: false
+            referencedRelation: "group_discussions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_reply_id_fkey"
+            columns: ["reply_id"]
+            isOneToOne: false
+            referencedRelation: "group_discussion_replies"
             referencedColumns: ["id"]
           },
         ]

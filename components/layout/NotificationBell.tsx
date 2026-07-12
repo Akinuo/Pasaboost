@@ -10,7 +10,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Bell, Heart, MessageCircle, ClipboardCheck, Check } from 'lucide-react'
+import { Bell, Heart, MessageCircle, ClipboardCheck, Check, MessagesSquare } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { createClient } from '@/lib/supabase/client'
 import { getNotifications, getUnreadNotificationCount, markAllNotificationsRead, markNotificationRead } from '@/lib/queries'
@@ -186,12 +186,12 @@ export default function NotificationBell() {
                   {notifications.map((n) => (
                     <li key={n.id}>
                       <Link
-                        href={`/community/${n.postId}`}
+                        href={n.type === 'discussion_reply' ? `/groups/${n.groupId}/discussions/${n.discussionId}` : `/community/${n.postId}`}
                         onClick={() => { handleNotificationClick(n); setOpen(false) }}
                         className={`flex items-start gap-2.5 px-4 py-3 text-sm hover:bg-accent transition-colors border-b border-border last:border-0 ${!n.isRead ? 'bg-primary/5' : ''}`}
                       >
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${n.type === 'like' ? 'bg-red-500/10 text-red-500' : n.type === 'review' ? 'bg-amber-500/10 text-amber-500' : 'bg-primary/10 text-primary'}`}>
-                          {n.type === 'like' ? <Heart size={14} fill="currentColor" /> : n.type === 'review' ? <ClipboardCheck size={14} /> : <MessageCircle size={14} />}
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${n.type === 'like' ? 'bg-red-500/10 text-red-500' : n.type === 'review' ? 'bg-amber-500/10 text-amber-500' : n.type === 'discussion_reply' ? 'bg-primary/10 text-primary' : 'bg-primary/10 text-primary'}`}>
+                          {n.type === 'like' ? <Heart size={14} fill="currentColor" /> : n.type === 'review' ? <ClipboardCheck size={14} /> : n.type === 'discussion_reply' ? <MessagesSquare size={14} /> : <MessageCircle size={14} />}
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-foreground leading-snug">
@@ -200,14 +200,19 @@ export default function NotificationBell() {
                               ? 'liked your essay'
                               : n.type === 'review'
                               ? `reviewed the ${n.reviewDimension} of your essay`
+                              : n.type === 'discussion_reply'
+                              ? 'replied to your discussion'
                               : 'commented on your essay'}{' '}
-                            <span className="font-medium">&ldquo;{truncateText(n.postTitle, 40)}&rdquo;</span>
+                            <span className="font-medium">&ldquo;{truncateText(n.type === 'discussion_reply' ? (n.discussionTitle ?? '') : (n.postTitle ?? ''), 40)}&rdquo;</span>
                           </p>
                           {n.type === 'comment' && n.commentPreview && (
                             <p className="text-xs text-muted-foreground mt-0.5 truncate">&ldquo;{n.commentPreview}&rdquo;</p>
                           )}
                           {n.type === 'review' && n.reviewPreview && (
                             <p className="text-xs text-muted-foreground mt-0.5 truncate">&ldquo;{n.reviewPreview}&rdquo;</p>
+                          )}
+                          {n.type === 'discussion_reply' && n.replyPreview && (
+                            <p className="text-xs text-muted-foreground mt-0.5 truncate">&ldquo;{n.replyPreview}&rdquo;</p>
                           )}
                           <p className="text-xs text-muted-foreground mt-1">{getRelativeTime(n.createdAt)}</p>
                         </div>

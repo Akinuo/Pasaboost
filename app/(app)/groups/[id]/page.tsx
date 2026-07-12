@@ -106,7 +106,7 @@ export default function StudyGroupPage({ params }: { params: Promise<{ id: strin
 
   if (loading) return <GroupSkeleton />
 
-  if (notFound || !group) {
+  if (!user || notFound || !group) {
     return (
       <div className="max-w-3xl mx-auto text-center py-16">
         <UsersRound size={36} className="mx-auto text-muted-foreground/40 mb-3" />
@@ -183,7 +183,7 @@ export default function StudyGroupPage({ params }: { params: Promise<{ id: strin
       </div>
 
       {section === 'discussions' ? (
-        <GroupDiscussions groupId={group.id} groupName={group.name} userId={user!.id} displayName={displayName} />
+        <GroupDiscussions groupId={group.id} groupName={group.name} userId={user.id} displayName={displayName} />
       ) : (
       <>
       <div className="flex gap-1 p-1 bg-muted rounded-lg mb-6 overflow-x-auto">
