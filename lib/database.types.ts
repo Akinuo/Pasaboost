@@ -764,6 +764,95 @@ export type Database = {
           },
         ]
       }
+      group_discussions: {
+        Row: {
+          id: string
+          group_id: string
+          user_id: string
+          display_name: string
+          title: string
+          body: string
+          daily_prompt_id: string | null
+          prompt_text: string | null
+          reply_count: number
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          group_id: string
+          user_id: string
+          display_name: string
+          title: string
+          body: string
+          daily_prompt_id?: string | null
+          prompt_text?: string | null
+          reply_count?: number
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          group_id?: string
+          user_id?: string
+          display_name?: string
+          title?: string
+          body?: string
+          daily_prompt_id?: string | null
+          prompt_text?: string | null
+          reply_count?: number
+          created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_discussions_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "study_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_discussions_daily_prompt_id_fkey"
+            columns: ["daily_prompt_id"]
+            isOneToOne: false
+            referencedRelation: "daily_prompts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_discussion_replies: {
+        Row: {
+          id: string
+          discussion_id: string
+          user_id: string
+          display_name: string
+          content: string
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          discussion_id: string
+          user_id: string
+          display_name: string
+          content: string
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          discussion_id?: string
+          user_id?: string
+          display_name?: string
+          content?: string
+          created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_discussion_replies_discussion_id_fkey"
+            columns: ["discussion_id"]
+            isOneToOne: false
+            referencedRelation: "group_discussions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

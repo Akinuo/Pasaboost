@@ -196,6 +196,37 @@ export interface GroupLeaderboardEntry {
   isYou: boolean
 }
 
+// ============================================================
+// Group discussions — member-started threads within a study group,
+// optionally anchored to a daily-generated or member-written prompt.
+// See supabase/migrations/0015_group_discussions.sql.
+// ============================================================
+
+export interface GroupDiscussion {
+  id: string
+  groupId: string
+  userId: string
+  displayName: string
+  title: string
+  body: string
+  dailyPromptId: string | null
+  promptText: string | null
+  isCustomPrompt: boolean
+  replyCount: number
+  isOwn: boolean
+  createdAt: Date
+}
+
+export interface GroupDiscussionReply {
+  id: string
+  discussionId: string
+  userId: string
+  displayName: string
+  content: string
+  isOwn: boolean
+  createdAt: Date
+}
+
 export interface ScoreEssayResponse {
   success: boolean
   score?: Omit<EssayScore, 'id' | 'createdAt'>

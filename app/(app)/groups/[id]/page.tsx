@@ -4,11 +4,12 @@ import { use, useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ArrowLeft, UsersRound, Copy, Check, Link2, LogOut, Crown, Trophy } from 'lucide-react'
+import { ArrowLeft, UsersRound, Copy, Check, Link2, LogOut, Crown, Trophy, MessagesSquare, ListOrdered } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { createClient } from '@/lib/supabase/client'
-import { getStudyGroup, getStudyGroupLeaderboard, leaveStudyGroup } from '@/lib/queries'
+import { getStudyGroup, getStudyGroupLeaderboard, leaveStudyGroup, getProfile } from '@/lib/queries'
 import { getScoreColor } from '@/lib/utils'
+import GroupDiscussions from '@/components/groups/GroupDiscussions'
 import type { StudyGroup, GroupLeaderboardEntry, ExamType } from '@/types'
 
 const EXAM_TABS: Array<{ label: string; value: ExamType | undefined }> = [
@@ -17,6 +18,11 @@ const EXAM_TABS: Array<{ label: string; value: ExamType | undefined }> = [
   { label: 'ACET', value: 'ACET' },
   { label: 'DCAT', value: 'DCAT' },
   { label: 'USTET', value: 'USTET' },
+]
+
+const SECTION_TABS: Array<{ label: string; value: 'leaderboard' | 'discussions'; icon: typeof ListOrdered }> = [
+  { label: 'Leaderboard', value: 'leaderboard', icon: ListOrdered },
+  { label: 'Discussions', value: 'discussions', icon: MessagesSquare },
 ]
 
 export default function StudyGroupPage({ params }: { params: Promise<{ id: string }> }) {
@@ -31,6 +37,8 @@ export default function StudyGroupPage({ params }: { params: Promise<{ id: strin
   const [copied, setCopied] = useState<'code' | 'link' | null>(null)
   const [leaving, setLeaving] = useState(false)
   const [notFound, setNotFound] = useState(false)
+  const [section, setSection] = useState<'leaderboard' | 'discussions'>('leaderboard')
+  const [displayName, setDisplayName] = useState('Student')
 
   const load = useCallback(async (silent = false) => {
     if (!user) return
@@ -56,6 +64,14 @@ export default function StudyGroupPage({ params }: { params: Promise<{ id: strin
       await load()
     })()
   }, [load])
+
+  useEffect(() => {
+    if (!user) return
+    const supabase = createClient()
+    getProfile(supabase, user.id).then((p) => {
+      setDisplayName(p?.displayName || (user.user_metadata?.display_name as string) || user.email?.split('@')[0] || 'Student')
+    })
+  }, [user])
 
   // Realtime: refresh when membership changes (someone joins/leaves)
   // so the roster and rankings stay current without a manual reload.
@@ -153,6 +169,23 @@ export default function StudyGroupPage({ params }: { params: Promise<{ id: strin
         </div>
       </div>
 
+      <div className="flex gap-1 p-1 bg-muted rounded-lg mb-6">
+        {SECTION_TABS.map((tab) => (
+          <button
+            key={tab.value}
+            onClick={() => setSection(tab.value)}
+            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${section === tab.value ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            <tab.icon size={14} />
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {section === 'discussions' ? (
+        <GroupDiscussions groupId={group.id} groupName={group.name} userId={user!.id} displayName={displayName} />
+      ) : (
+      <>
       <div className="flex gap-1 p-1 bg-muted rounded-lg mb-6 overflow-x-auto">
         {EXAM_TABS.map((tab) => (
           <button key={tab.label} onClick={() => setActiveExam(tab.value)} className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap min-w-fit ${activeExam === tab.value ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}>
@@ -211,6 +244,8 @@ export default function StudyGroupPage({ params }: { params: Promise<{ id: strin
             ))}
           </div>
         </div>
+      )}
+      </>
       )}
     </div>
   )

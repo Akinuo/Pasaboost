@@ -13,6 +13,7 @@ import type {
   LeaderboardEntry, ScoreDataPoint, ExamType, RubricScore, WritingPrompt,
   CommunityPost, CommunityComment, AppNotification, DrillAttempt, ScoreDimension,
   CommunityPostReview, FeedbackQAMessage, StudyGroup, StudyGroupMember, GroupLeaderboardEntry,
+  GroupDiscussion, GroupDiscussionReply,
 } from '@/types'
 
 type TypedClient = SupabaseClient<Database>
@@ -497,6 +498,134 @@ export async function getDailyGeneratedPrompts(supabase: TypedClient, limit = 20
     isDaily: true,
     date: row.generated_date,
   }))
+}
+
+// ============================================================
+// Group discussions — threads members start within a study group,
+// optionally anchored to a daily-generated or self-written prompt.
+// ============================================================
+
+function rowToGroupDiscussion(
+  row: Database['public']['Tables']['group_discussions']['Row'],
+  currentUserId: string
+): GroupDiscussion {
+  return {
+    id: row.id,
+    groupId: row.group_id,
+    userId: row.user_id,
+    displayName: row.display_name,
+    title: row.title,
+    body: row.body,
+    dailyPromptId: row.daily_prompt_id,
+    promptText: row.prompt_text,
+    isCustomPrompt: row.prompt_text != null && row.daily_prompt_id == null,
+    replyCount: row.reply_count,
+    isOwn: row.user_id === currentUserId,
+    createdAt: new Date(row.created_at ?? Date.now()),
+  }
+}
+
+export async function getGroupDiscussions(
+  supabase: TypedClient,
+  groupId: string,
+  currentUserId: string
+): Promise<GroupDiscussion[]> {
+  const { data, error } = await supabase
+    .from('group_discussions')
+    .select('*')
+    .eq('group_id', groupId)
+    .order('created_at', { ascending: false })
+  if (error || !data) return []
+  return data.map((row) => rowToGroupDiscussion(row, currentUserId))
+}
+
+export async function getGroupDiscussion(
+  supabase: TypedClient,
+  discussionId: string,
+  currentUserId: string
+): Promise<GroupDiscussion | null> {
+  const { data, error } = await supabase.from('group_discussions').select('*').eq('id', discussionId).single()
+  if (error || !data) return null
+  return rowToGroupDiscussion(data, currentUserId)
+}
+
+export async function createGroupDiscussion(
+  supabase: TypedClient,
+  discussion: {
+    groupId: string
+    userId: string
+    displayName: string
+    title: string
+    body: string
+    dailyPromptId?: string
+    promptText?: string
+  }
+): Promise<string> {
+  const { data, error } = await supabase
+    .from('group_discussions')
+    .insert({
+      group_id: discussion.groupId,
+      user_id: discussion.userId,
+      display_name: discussion.displayName,
+      title: discussion.title,
+      body: discussion.body,
+      daily_prompt_id: discussion.dailyPromptId ?? null,
+      prompt_text: discussion.promptText ?? null,
+    })
+    .select('id')
+    .single()
+  if (error || !data) throw error ?? new Error('Failed to start discussion')
+  return data.id
+}
+
+export async function deleteGroupDiscussion(supabase: TypedClient, discussionId: string): Promise<void> {
+  const { error } = await supabase.from('group_discussions').delete().eq('id', discussionId)
+  if (error) throw error
+}
+
+export async function getGroupDiscussionReplies(
+  supabase: TypedClient,
+  discussionId: string,
+  currentUserId: string
+): Promise<GroupDiscussionReply[]> {
+  const { data, error } = await supabase
+    .from('group_discussion_replies')
+    .select('*')
+    .eq('discussion_id', discussionId)
+    .order('created_at', { ascending: true })
+  if (error || !data) return []
+  return data.map((row) => ({
+    id: row.id,
+    discussionId: row.discussion_id,
+    userId: row.user_id,
+    displayName: row.display_name,
+    content: row.content,
+    isOwn: row.user_id === currentUserId,
+    createdAt: new Date(row.created_at ?? Date.now()),
+  }))
+}
+
+export async function addGroupDiscussionReply(
+  supabase: TypedClient,
+  reply: { discussionId: string; userId: string; displayName: string; content: string }
+): Promise<string> {
+  const { data, error } = await supabase
+    .from('group_discussion_replies')
+    .insert({
+      discussion_id: reply.discussionId,
+      user_id: reply.userId,
+      display_name: reply.displayName,
+      content: reply.content,
+    })
+    .select('id')
+    .single()
+  if (error || !data) throw error ?? new Error('Failed to post reply')
+  return data.id
+}
+
+export async function deleteGroupDiscussionReply(supabase: TypedClient, replyId: string): Promise<void> {
+  const { error } = await supabase.from('group_discussion_replies').delete().eq('id', replyId)
+  if (error) throw error
 }
 
 // ============================================================
