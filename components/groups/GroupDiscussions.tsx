@@ -123,7 +123,7 @@ export default function GroupDiscussions({ groupId, groupName, userId, displayNa
       <NewDiscussionModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        onCreated={() => load(true)}
+        onCreated={(discussion) => setDiscussions((prev) => [discussion, ...prev])}
         groupId={groupId}
         groupName={groupName}
         userId={userId}

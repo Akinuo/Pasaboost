@@ -19,12 +19,12 @@ import { X, MessagesSquare, Loader2, Sparkles, PenLine, Ban } from 'lucide-react
 import { createClient } from '@/lib/supabase/client'
 import { createGroupDiscussion, getDailyGeneratedPrompts } from '@/lib/queries'
 import { todayInManila } from '@/lib/utils'
-import type { WritingPrompt } from '@/types'
+import type { GroupDiscussion, WritingPrompt } from '@/types'
 
 interface NewDiscussionModalProps {
   open: boolean
   onClose: () => void
-  onCreated: (discussionId: string) => void
+  onCreated: (discussion: GroupDiscussion) => void
   groupId: string
   groupName: string
   userId: string
@@ -88,6 +88,8 @@ export default function NewDiscussionModal({ open, onClose, onCreated, groupId, 
     if (promptMode === 'custom' && customPrompt.trim().length < 10) return setError('Your prompt needs a bit more detail — at least 10 characters.')
 
     const selectedDaily = promptMode === 'daily' ? dailyPrompts.find((p) => p.id === selectedDailyId) : undefined
+    const dailyPromptId = promptMode === 'daily' ? selectedDaily?.id : undefined
+    const promptText = promptMode === 'daily' ? selectedDaily?.text : promptMode === 'custom' ? customPrompt.trim() : undefined
 
     setSubmitting(true)
     try {
@@ -98,10 +100,25 @@ export default function NewDiscussionModal({ open, onClose, onCreated, groupId, 
         displayName,
         title: title.trim(),
         body: body.trim(),
-        dailyPromptId: promptMode === 'daily' ? selectedDaily?.id : undefined,
-        promptText: promptMode === 'daily' ? selectedDaily?.text : promptMode === 'custom' ? customPrompt.trim() : undefined,
+        dailyPromptId,
+        promptText,
       })
-      onCreated(id)
+      // We already have every field the list needs — hand it straight to the
+      // parent instead of making it wait on a refetch/realtime round-trip.
+      onCreated({
+        id,
+        groupId,
+        userId,
+        displayName,
+        title: title.trim(),
+        body: body.trim(),
+        dailyPromptId: dailyPromptId ?? null,
+        promptText: promptText ?? null,
+        isCustomPrompt: promptMode === 'custom',
+        replyCount: 0,
+        isOwn: true,
+        createdAt: new Date(),
+      })
       handleClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start discussion. Please try again.')

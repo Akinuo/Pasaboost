@@ -4,7 +4,7 @@ import { use, useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Clock, Send, Loader2, Trash2, Sparkles, PenLine, MessagesSquare } from 'lucide-react'
+import { ArrowLeft, Clock, Send, Trash2, Sparkles, PenLine, MessagesSquare } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { createClient } from '@/lib/supabase/client'
 import {
@@ -24,7 +24,7 @@ export default function GroupDiscussionPage({ params }: { params: Promise<{ id: 
   const [replies, setReplies] = useState<GroupDiscussionReply[]>([])
   const [loading, setLoading] = useState(true)
   const [replyText, setReplyText] = useState('')
-  const [posting, setPosting] = useState(false)
+  const [replyError, setReplyError] = useState<string | null>(null)
   const [displayName, setDisplayName] = useState('Student')
 
   const load = useCallback(async (silent = false) => {
@@ -66,14 +66,34 @@ export default function GroupDiscussionPage({ params }: { params: Promise<{ id: 
 
   const handleAddReply = async () => {
     if (!user || !replyText.trim()) return
-    setPosting(true)
+    const content = replyText.trim()
+    const tempId = `temp-${Date.now()}`
+
+    // Optimistic append so the reply appears instantly instead of waiting
+    // on the insert + realtime round-trip.
+    const optimisticReply: GroupDiscussionReply = {
+      id: tempId,
+      discussionId,
+      userId: user.id,
+      displayName,
+      content,
+      isOwn: true,
+      createdAt: new Date(),
+    }
+    setReplies((prev) => [...prev, optimisticReply])
+    setReplyText('')
+    setReplyError(null)
+
     const supabase = createClient()
     try {
-      await addGroupDiscussionReply(supabase, { discussionId, userId: user.id, displayName, content: replyText.trim() })
-      setReplyText('')
-      load(true)
-    } finally {
-      setPosting(false)
+      const realId = await addGroupDiscussionReply(supabase, { discussionId, userId: user.id, displayName, content })
+      // Swap the temp id for the real one so delete works before the next reload.
+      setReplies((prev) => prev.map((r) => (r.id === tempId ? { ...r, id: realId } : r)))
+    } catch (err) {
+      // Roll back and give the user their text back to retry.
+      setReplies((prev) => prev.filter((r) => r.id !== tempId))
+      setReplyText(content)
+      setReplyError(err instanceof Error ? err.message : 'Failed to post reply. Please try again.')
     }
   }
 
@@ -147,24 +167,27 @@ export default function GroupDiscussionPage({ params }: { params: Promise<{ id: 
           Replies {replies.length > 0 && `(${replies.length})`}
         </h2>
 
-        <div className="flex gap-2 mb-6">
-          <input
-            type="text"
-            value={replyText}
-            onChange={(e) => setReplyText(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && !posting) handleAddReply() }}
-            placeholder="Share your take…"
-            maxLength={2000}
-            className="flex-1 px-3 py-2.5 text-sm rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
-          />
-          <button
-            onClick={handleAddReply}
-            disabled={posting || !replyText.trim()}
-            className="flex items-center justify-center px-4 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 flex-shrink-0"
-            aria-label="Post reply"
-          >
-            {posting ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
-          </button>
+        <div className="mb-6">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={replyText}
+              onChange={(e) => { setReplyText(e.target.value); if (replyError) setReplyError(null) }}
+              onKeyDown={(e) => { if (e.key === 'Enter' && replyText.trim()) handleAddReply() }}
+              placeholder="Share your take…"
+              maxLength={2000}
+              className="flex-1 px-3 py-2.5 text-sm rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
+            />
+            <button
+              onClick={handleAddReply}
+              disabled={!replyText.trim()}
+              className="flex items-center justify-center px-4 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 flex-shrink-0"
+              aria-label="Post reply"
+            >
+              <Send size={15} />
+            </button>
+          </div>
+          {replyError && <p className="text-xs text-destructive mt-1.5">{replyError}</p>}
         </div>
 
         {replies.length === 0 ? (
