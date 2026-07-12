@@ -24,6 +24,8 @@ export interface UserProfile {
   leaderboardEnabled: boolean
   leaderboardAlias: string | null
   emailNotifications: boolean
+  examType: ExamType | null
+  examDate: string | null // 'YYYY-MM-DD', plain string to avoid timezone drift
 }
 
 export interface UserStats {

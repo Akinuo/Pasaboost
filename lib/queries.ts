@@ -114,13 +114,22 @@ export async function getProfile(supabase: TypedClient, userId: string): Promise
     leaderboardEnabled: data.leaderboard_enabled ?? false,
     leaderboardAlias: data.leaderboard_alias,
     emailNotifications: data.email_notifications ?? true,
+    examType: (data.exam_type as ExamType | null) ?? null,
+    examDate: data.exam_date,
   }
 }
 
 export async function updateProfile(
   supabase: TypedClient,
   userId: string,
-  updates: Partial<{ displayName: string; leaderboardEnabled: boolean; leaderboardAlias: string; emailNotifications: boolean }>
+  updates: Partial<{
+    displayName: string
+    leaderboardEnabled: boolean
+    leaderboardAlias: string
+    emailNotifications: boolean
+    examType: ExamType | null
+    examDate: string | null
+  }>
 ) {
   const { error } = await supabase
     .from('profiles')
@@ -129,6 +138,8 @@ export async function updateProfile(
       ...(updates.leaderboardEnabled !== undefined && { leaderboard_enabled: updates.leaderboardEnabled }),
       ...(updates.leaderboardAlias !== undefined && { leaderboard_alias: updates.leaderboardAlias }),
       ...(updates.emailNotifications !== undefined && { email_notifications: updates.emailNotifications }),
+      ...(updates.examType !== undefined && { exam_type: updates.examType }),
+      ...(updates.examDate !== undefined && { exam_date: updates.examDate }),
     })
     .eq('id', userId)
   if (error) throw error
@@ -142,6 +153,11 @@ export async function getUserStats(supabase: TypedClient, userId: string): Promi
   const { data, error } = await supabase.from('user_stats').select('*').eq('user_id', userId).single()
   if (error || !data) return null
   return rowToStats(data)
+}
+
+export async function updateWeeklyGoal(supabase: TypedClient, userId: string, weeklyGoal: number): Promise<void> {
+  const { error } = await supabase.from('user_stats').update({ weekly_goal: weeklyGoal }).eq('user_id', userId)
+  if (error) throw error
 }
 
 // ============================================================

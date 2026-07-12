@@ -487,6 +487,8 @@ export type Database = {
           created_at: string | null
           display_name: string | null
           email_notifications: boolean | null
+          exam_date: string | null
+          exam_type: string | null
           id: string
           leaderboard_alias: string | null
           leaderboard_enabled: boolean | null
@@ -496,6 +498,8 @@ export type Database = {
           created_at?: string | null
           display_name?: string | null
           email_notifications?: boolean | null
+          exam_date?: string | null
+          exam_type?: string | null
           id: string
           leaderboard_alias?: string | null
           leaderboard_enabled?: boolean | null
@@ -505,6 +509,8 @@ export type Database = {
           created_at?: string | null
           display_name?: string | null
           email_notifications?: boolean | null
+          exam_date?: string | null
+          exam_type?: string | null
           id?: string
           leaderboard_alias?: string | null
           leaderboard_enabled?: boolean | null

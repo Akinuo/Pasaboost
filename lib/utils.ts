@@ -220,6 +220,16 @@ export function formatDateTime(date: Date | string): string {
   })
 }
 
+// Whole calendar days between today (Asia/Manila) and a 'YYYY-MM-DD' target
+// date. Deliberately date-only (no Date object / time-of-day math) so a
+// student who sets their exam date never sees it wobble between two numbers
+// depending on what time of day they check.
+export function daysUntilManila(targetDate: string): number {
+  const today = new Date(`${todayInManila()}T00:00:00Z`)
+  const target = new Date(`${targetDate}T00:00:00Z`)
+  return Math.round((target.getTime() - today.getTime()) / 86400000)
+}
+
 export function getRelativeTime(date: Date | string): string {
   const d = date instanceof Date ? date : new Date(date)
   const diffMs = Date.now() - d.getTime()
