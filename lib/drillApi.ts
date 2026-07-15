@@ -30,7 +30,7 @@ export async function scoreDrillViaAPI(params: {
       }
     }
 
-    let data: any
+    let data: DrillScoreResponse
     try {
       data = JSON.parse(raw)
     } catch {

@@ -30,7 +30,7 @@ export async function scoreEssayViaAPI(params: {
       }
     }
 
-    let data: any
+    let data: ScoreEssayResponse
     try {
       data = JSON.parse(raw)
     } catch {

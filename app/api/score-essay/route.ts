@@ -18,6 +18,14 @@ import { z } from 'zod'
 import Groq from 'groq-sdk'
 import { createClient } from '@/lib/supabase/server'
 import { getRecentScoreCount } from '@/lib/queries'
+import {
+  AiEssayScoreResponseSchema,
+  AiRubricScoreSchema,
+  AiParagraphRewriteSchema,
+  AiGrammarIssueSchema,
+  parseAiJson,
+  parseLenientArray,
+} from '@/lib/aiSchemas'
 
 export const runtime = 'nodejs' // groq-sdk needs Node APIs, not Edge
 
@@ -110,25 +118,14 @@ For grammarIssues, find up to 8 real issues — look closely, including subtler 
   const responseText = completion.choices[0]?.message?.content
   if (!responseText) throw new Error('Empty response from AI')
 
-  let parsed: any
-  try {
-    parsed = JSON.parse(responseText)
-  } catch {
-    const match = responseText.match(/\{[\s\S]*\}/)
-    if (!match) throw new Error('Invalid JSON response from AI')
-    parsed = JSON.parse(match[0])
-  }
+  const parsed = AiEssayScoreResponseSchema.parse(parseAiJson(responseText))
 
-  const rubricScores = (parsed.rubricScores || []).map((r: any) => ({
-    dimension: r.dimension,
-    score: Math.max(1, Math.min(20, parseInt(r.score) || 8)),
-    maxScore: 20,
-    feedback: r.feedback || '',
-    strengths: Array.isArray(r.strengths) ? r.strengths : [],
-    weaknesses: Array.isArray(r.weaknesses) ? r.weaknesses : [],
+  const rubricScores = parseLenientArray(AiRubricScoreSchema, parsed.rubricScores).map((r) => ({
+    ...r,
+    maxScore: 20 as const,
   }))
 
-  const totalScore = rubricScores.reduce((sum: number, r: any) => sum + r.score, 0)
+  const totalScore = rubricScores.reduce((sum, r) => sum + r.score, 0)
 
   const band =
     totalScore >= 90 ? 'Excellent (90-100)' :
@@ -139,23 +136,14 @@ For grammarIssues, find up to 8 real issues — look closely, including subtler 
   return {
     rubricScores,
     totalScore,
-    overallFeedback: parsed.overallFeedback || '',
-    strengths: Array.isArray(parsed.strengths) ? parsed.strengths : [],
-    weaknesses: Array.isArray(parsed.weaknesses) ? parsed.weaknesses : [],
-    suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions.slice(0, 5) : [],
-    paragraphRewrites: Array.isArray(parsed.paragraphRewrites) ? parsed.paragraphRewrites.slice(0, 2) : [],
-    grammarIssues: Array.isArray(parsed.grammarIssues)
-      ? parsed.grammarIssues
-          .filter((g: any) => g && typeof g.excerpt === 'string' && essay.includes(g.excerpt))
-          .slice(0, 8)
-          .map((g: any) => ({
-            type: ['grammar', 'spelling', 'punctuation', 'style'].includes(g.type) ? g.type : 'grammar',
-            excerpt: g.excerpt,
-            issue: g.issue || '',
-            suggestion: g.suggestion || '',
-            replacement: typeof g.replacement === 'string' && g.replacement.length > 0 ? g.replacement : undefined,
-          }))
-      : [],
+    overallFeedback: parsed.overallFeedback,
+    strengths: parsed.strengths,
+    weaknesses: parsed.weaknesses,
+    suggestions: parsed.suggestions.slice(0, 5),
+    paragraphRewrites: parseLenientArray(AiParagraphRewriteSchema, parsed.paragraphRewrites).slice(0, 2),
+    grammarIssues: parseLenientArray(AiGrammarIssueSchema, parsed.grammarIssues)
+      .filter((g) => essay.includes(g.excerpt))
+      .slice(0, 8),
     estimatedBand: band,
     modelVersion: 'llama-3.3-70b-versatile',
   }

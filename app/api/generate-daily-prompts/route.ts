@@ -16,9 +16,11 @@
 // ============================================================
 
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import Groq from 'groq-sdk'
 import { createServiceRoleClient } from '@/lib/supabase/server'
 import { todayInManila } from '@/lib/utils'
+import { AiDailyPromptsResponseSchema, AiGeneratedPromptSchema, parseAiJson, parseLenientArray } from '@/lib/aiSchemas'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -92,28 +94,24 @@ Respond with ONLY valid JSON (no markdown, no explanation outside JSON):
   const text = completion.choices[0]?.message?.content
   if (!text) return []
 
-  let parsed: any
+  let parsed: z.infer<typeof AiDailyPromptsResponseSchema>
   try {
-    parsed = JSON.parse(text)
+    parsed = AiDailyPromptsResponseSchema.parse(parseAiJson(text))
   } catch {
-    const match = text.match(/\{[\s\S]*\}/)
-    if (!match) return []
-    parsed = JSON.parse(match[0])
+    return []
   }
 
-  const raw = Array.isArray(parsed.prompts) ? parsed.prompts : []
-
-  return raw
-    .filter((p: any) => p && typeof p.text === 'string' && p.text.trim().length > 15)
-    .map((p: any) => ({
+  return parseLenientArray(AiGeneratedPromptSchema, parsed.prompts)
+    .filter((p) => p.text.trim().length > 15)
+    .map((p) => ({
       text: p.text.trim(),
       category: PROMPT_CATEGORIES.includes(p.category) ? p.category : 'Social Issues',
-      examType: Array.isArray(p.examType) && p.examType.length > 0
-        ? p.examType.filter((e: string) => EXAM_TYPES.includes(e))
+      examType: p.examType.length > 0
+        ? p.examType.filter((e) => EXAM_TYPES.includes(e))
         : ['General'],
       difficulty: DIFFICULTIES.includes(p.difficulty) ? p.difficulty : 'Intermediate',
-      keywords: Array.isArray(p.keywords) ? p.keywords.slice(0, 5).map(String) : [],
-      tip: typeof p.tip === 'string' ? p.tip : undefined,
+      keywords: p.keywords.slice(0, 5),
+      tip: p.tip,
     }))
 }
 
