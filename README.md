@@ -2,7 +2,6 @@
 
 **An AI-Powered Essay Coaching System for Enhancing College Entrance Examination Writing Performance**
 
-> *Thesis Project — Department of Information Technology / Computer Science*
 > **Stack: Next.js 14 (App Router) + Supabase + Groq**
 
 PasaBoost is a full-stack web application that helps Filipino high school students prepare for
@@ -18,7 +17,6 @@ by Supabase for auth, Postgres, and realtime.
 ## 📚 Table of Contents
 
 - [What Changed From the React+Vite Edition](#what-changed-from-the-reactvite-edition)
-- [Thesis Abstract](#thesis-abstract)
 - [Features](#features)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
@@ -26,7 +24,6 @@ by Supabase for auth, Postgres, and realtime.
 - [Environment Variables](#environment-variables)
 - [Deployment](#deployment)
 - [Rubric Scoring](#rubric-scoring)
-- [Research Methodology](#research-methodology)
 - [Security](#security)
 - [API Reference](#api-reference)
 
@@ -52,23 +49,6 @@ Express/Cloudflare backend, here's what's different — and why it's simpler:
 an ordinary file in the same project as your frontend. There's no second server to deploy, no CORS
 configuration, and no separate secrets dashboard. Push to Vercel and both the UI and the API ship
 together.
-
----
-
-## Thesis Abstract
-
-**Title:** PasaBoost: An AI-Powered Essay Coaching System for Enhancing College Entrance Examination Writing Performance
-
-This study develops and evaluates an AI-powered essay coaching web application designed to assist
-Filipino public high school students in improving their essay writing skills for college entrance
-examinations. The system uses large language model (LLM) technology via the Groq API to provide
-immediate, rubric-based feedback across five writing dimensions: Content, Organization, Grammar,
-Coherence, and Argument.
-
-The research employs an eight-week quasi-experimental design comparing AI-generated feedback
-(experimental group) against traditional peer review (control group). Evaluation metrics include
-rubric score improvements, grammar accuracy, argument quality, revision frequency, writing
-confidence, and user satisfaction (SUS scale).
 
 ---
 
@@ -242,6 +222,19 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+### 7. Running Tests
+
+```bash
+npm run test          # run once
+npm run test:watch    # watch mode
+npm run test:coverage # with coverage report
+```
+
+Tests cover pure scoring/formatting logic in `lib/` plus route-level integration tests for the
+critical API endpoints (auth gate, rate limiting, input validation, and upstream AI-service
+failure handling) under `app/api/**/*.test.ts`. Supabase and the Groq SDK are mocked — these are
+fast, no-network tests, not end-to-end tests against real infra.
+
 ---
 
 ## 🔑 Environment Variables
@@ -312,23 +305,6 @@ route ships as a Vercel Serverless Function automatically alongside the rest of 
 | Developing | 60–74 |
 | Beginning | 45–59 |
 | Needs Improvement | <45 |
-
----
-
-## 🔬 Research Methodology
-
-- **Type:** Quasi-experimental with pre-test/post-test
-- **Duration:** 8 weeks
-- **Groups:** Experimental (AI feedback) vs. Control (peer review)
-- **Participants:** Public high school Grade 12 students in the Philippines
-
-**Evaluation metrics:** rubric score improvement, grammar accuracy, coherence quality, argument
-quality, revision frequency (tracked via the `drafts` table's `updated_at` history), writing
-confidence (pre/post survey), and user satisfaction (SUS questionnaire).
-
-**Statistical analysis:** paired t-tests for within-group improvement, independent samples t-test
-for between-group comparison, Cohen's d for effect size, Pearson correlation between revision
-frequency and score improvement.
 
 ---
 

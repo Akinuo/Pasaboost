@@ -4,11 +4,11 @@ import path from 'path'
 export default defineConfig({
   test: {
     environment: 'node',
-    include: ['lib/**/*.test.ts'],
+    include: ['lib/**/*.test.ts', 'app/**/*.test.ts'],
     coverage: {
       provider: 'v8',
-      include: ['lib/**/*.ts'],
-      exclude: ['lib/**/*.test.ts', 'lib/database.types.ts'],
+      include: ['lib/**/*.ts', 'app/api/**/*.ts'],
+      exclude: ['lib/**/*.test.ts', 'lib/database.types.ts', 'app/**/*.test.ts'],
     },
   },
   resolve: {
