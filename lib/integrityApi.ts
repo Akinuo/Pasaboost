@@ -25,7 +25,7 @@ export async function checkIntegrityViaAPI(essay: string): Promise<IntegrityChec
       }
     }
 
-    let data: any
+    let data: IntegrityCheckResponse
     try {
       data = JSON.parse(raw)
     } catch {

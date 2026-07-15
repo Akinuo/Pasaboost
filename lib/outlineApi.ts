@@ -25,7 +25,7 @@ export async function generateOutlineViaAPI(params: { prompt: string; examType: 
       }
     }
 
-    let data: any
+    let data: OutlineResponse
     try {
       data = JSON.parse(raw)
     } catch {

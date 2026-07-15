@@ -13,6 +13,7 @@ import { z } from 'zod'
 import Groq from 'groq-sdk'
 import { createClient } from '@/lib/supabase/server'
 import { getRecentDrillCount } from '@/lib/queries'
+import { AiDrillScoreResponseSchema, parseAiJson } from '@/lib/aiSchemas'
 
 export const runtime = 'nodejs'
 
@@ -80,20 +81,7 @@ Respond with ONLY valid JSON (no markdown):
   const raw = completion.choices[0]?.message?.content
   if (!raw) throw new Error('Empty response from AI')
 
-  let parsed: any
-  try {
-    parsed = JSON.parse(raw)
-  } catch {
-    const match = raw.match(/\{[\s\S]*\}/)
-    if (!match) throw new Error('Invalid JSON response from AI')
-    parsed = JSON.parse(match[0])
-  }
-
-  return {
-    score: Math.max(1, Math.min(20, parseInt(parsed.score) || 10)),
-    feedback: typeof parsed.feedback === 'string' ? parsed.feedback : '',
-    tip: typeof parsed.tip === 'string' ? parsed.tip : undefined,
-  }
+  return AiDrillScoreResponseSchema.parse(parseAiJson(raw))
 }
 
 export async function POST(req: NextRequest) {

@@ -17,6 +17,7 @@ import Groq from 'groq-sdk'
 import { createClient } from '@/lib/supabase/server'
 import { getRecentToolUsageCount, recordToolUsage } from '@/lib/queries'
 import type { EssayOutline } from '@/types'
+import { AiOutlineResponseSchema, AiOutlineSectionSchema, parseAiJson, parseLenientArray } from '@/lib/aiSchemas'
 
 export const runtime = 'nodejs'
 
@@ -64,24 +65,14 @@ async function generateOutline(prompt: string, examType: string): Promise<EssayO
   const text = completion.choices[0]?.message?.content
   if (!text) throw new Error('Empty response from AI')
 
-  let parsed: any
-  try {
-    parsed = JSON.parse(text)
-  } catch {
-    const match = text.match(/\{[\s\S]*\}/)
-    if (!match) throw new Error('Invalid JSON response from AI')
-    parsed = JSON.parse(match[0])
-  }
+  const parsed = AiOutlineResponseSchema.parse(parseAiJson(text))
 
   return {
-    thesisSuggestion: parsed.thesisSuggestion || '',
-    sections: Array.isArray(parsed.sections)
-      ? parsed.sections.slice(0, 6).map((s: any) => ({
-          title: s.title || 'Section',
-          points: Array.isArray(s.points) ? s.points.slice(0, 5) : [],
-        }))
-      : [],
-    transitionTips: Array.isArray(parsed.transitionTips) ? parsed.transitionTips.slice(0, 5) : [],
+    thesisSuggestion: parsed.thesisSuggestion,
+    sections: parseLenientArray(AiOutlineSectionSchema, parsed.sections)
+      .slice(0, 6)
+      .map((s) => ({ ...s, points: s.points.slice(0, 5) })),
+    transitionTips: parsed.transitionTips.slice(0, 5),
   }
 }
 

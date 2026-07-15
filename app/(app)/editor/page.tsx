@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { createClient } from '@/lib/supabase/client'
+import { toJson } from '@/lib/supabase/json'
 import { saveDraft, updateDraft, getUserDrafts, deleteDraft, getDraft, getProfile, getUserScores, getUserStats, syncLeaderboardEntries, getScore } from '@/lib/queries'
 import { scoreEssayViaAPI, generateMockScore } from '@/lib/scoreApi'
 import { checkIntegrityViaAPI } from '@/lib/integrityApi'
@@ -361,20 +362,20 @@ function EssayEditorInner() {
           prompt,
           exam_type: examType,
           total_score: scoreData.totalScore,
-          rubric_scores: scoreData.rubricScores as any,
+          rubric_scores: toJson(scoreData.rubricScores),
           overall_feedback: scoreData.overallFeedback,
-          strengths: scoreData.strengths as any,
-          weaknesses: scoreData.weaknesses as any,
-          suggestions: scoreData.suggestions as any,
-          paragraph_rewrites: scoreData.paragraphRewrites as any,
+          strengths: toJson(scoreData.strengths),
+          weaknesses: toJson(scoreData.weaknesses),
+          suggestions: toJson(scoreData.suggestions),
+          paragraph_rewrites: toJson(scoreData.paragraphRewrites),
           estimated_band: scoreData.estimatedBand,
           readability_score: scoreData.readabilityScore,
           vocabulary_diversity: scoreData.vocabularyDiversity,
           model_version: scoreData.modelVersion,
-          grammar_issues: (scoreData.grammarIssues ?? []) as any,
+          grammar_issues: toJson(scoreData.grammarIssues ?? []),
           ai_likelihood: integrity?.aiDetection?.likelihood,
           ai_verdict: integrity?.aiDetection?.verdict,
-          ai_indicators: (integrity?.aiDetection?.indicators ?? []) as any,
+          ai_indicators: toJson(integrity?.aiDetection?.indicators ?? []),
           ai_explanation: integrity?.aiDetection?.explanation,
           originality_score: integrity?.originality?.score,
           originality_flagged: integrity?.originality?.flagged,
@@ -387,7 +388,7 @@ function EssayEditorInner() {
           time_limit_seconds: examModeActive ? examTimeLimitMinutes * 60 : null,
           time_taken_seconds: timeTakenSeconds != null ? Math.round(timeTakenSeconds) : null,
           revised_from_score_id: revisedFromScoreId,
-        } as any)
+        })
         .select('id')
         .single()
 

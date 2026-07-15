@@ -26,7 +26,7 @@ export async function checkGrammarViaAPI(essay: string): Promise<GrammarCheckRes
       }
     }
 
-    let data: any
+    let data: GrammarCheckResponse
     try {
       data = JSON.parse(raw)
     } catch {

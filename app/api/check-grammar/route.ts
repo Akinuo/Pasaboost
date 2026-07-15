@@ -16,7 +16,8 @@ import { z } from 'zod'
 import Groq from 'groq-sdk'
 import { createClient } from '@/lib/supabase/server'
 import { getRecentToolUsageCount, recordToolUsage } from '@/lib/queries'
-import type { GrammarIssue, GrammarIssueType } from '@/types'
+import type { GrammarIssue } from '@/types'
+import { AiGrammarCheckResponseSchema, AiGrammarIssueSchema, parseAiJson, parseLenientArray } from '@/lib/aiSchemas'
 
 export const runtime = 'nodejs'
 
@@ -33,8 +34,6 @@ function getGroqClient(): Groq | null {
   if (!process.env.GROQ_API_KEY) return null
   return new Groq({ apiKey: process.env.GROQ_API_KEY })
 }
-
-const VALID_TYPES: GrammarIssueType[] = ['grammar', 'spelling', 'punctuation', 'style']
 
 async function findGrammarIssues(essay: string): Promise<GrammarIssue[]> {
   const groq = getGroqClient()
@@ -70,27 +69,16 @@ Find up to 12 real issues. Both "excerpt" and "replacement" must be precise, lit
   const text = completion.choices[0]?.message?.content
   if (!text) return []
 
-  let parsed: any
+  let parsed: z.infer<typeof AiGrammarCheckResponseSchema>
   try {
-    parsed = JSON.parse(text)
+    parsed = AiGrammarCheckResponseSchema.parse(parseAiJson(text))
   } catch {
-    const match = text.match(/\{[\s\S]*\}/)
-    if (!match) return []
-    parsed = JSON.parse(match[0])
+    return []
   }
 
-  const rawIssues = Array.isArray(parsed.issues) ? parsed.issues : []
-
-  return rawIssues
-    .filter((g: any) => g && typeof g.excerpt === 'string' && essay.includes(g.excerpt))
+  return parseLenientArray(AiGrammarIssueSchema, parsed.issues)
+    .filter((g) => essay.includes(g.excerpt))
     .slice(0, 12)
-    .map((g: any) => ({
-      type: VALID_TYPES.includes(g.type) ? g.type : 'grammar',
-      excerpt: g.excerpt,
-      issue: g.issue || '',
-      suggestion: g.suggestion || '',
-      replacement: typeof g.replacement === 'string' && g.replacement.length > 0 ? g.replacement : undefined,
-    }))
 }
 
 export async function POST(req: NextRequest) {

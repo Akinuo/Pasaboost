@@ -13,7 +13,7 @@ import type {
   LeaderboardEntry, ScoreDataPoint, ExamType, RubricScore, WritingPrompt,
   CommunityPost, CommunityComment, AppNotification, DrillAttempt, ScoreDimension,
   CommunityPostReview, FeedbackQAMessage, StudyGroup, StudyGroupMember, GroupLeaderboardEntry,
-  GroupDiscussion, GroupDiscussionReply,
+  GroupDiscussion, GroupDiscussionReply, AIDetectionVerdict,
 } from '@/types'
 
 type TypedClient = SupabaseClient<Database>
@@ -61,26 +61,26 @@ function rowToScore(row: Database['public']['Tables']['scores']['Row']): EssaySc
     vocabularyDiversity: row.vocabulary_diversity ?? undefined,
     createdAt: new Date(row.created_at ?? Date.now()),
     modelVersion: row.model_version ?? undefined,
-    grammarIssues: ((row as any).grammar_issues as EssayScore['grammarIssues']) ?? [],
-    aiDetection: (row as any).ai_likelihood != null ? {
-      likelihood: (row as any).ai_likelihood,
-      verdict: (row as any).ai_verdict ?? 'Mixed / Possibly AI-Assisted',
-      indicators: ((row as any).ai_indicators as string[]) ?? [],
-      explanation: (row as any).ai_explanation ?? '',
+    grammarIssues: (row.grammar_issues as unknown as EssayScore['grammarIssues']) ?? [],
+    aiDetection: row.ai_likelihood != null ? {
+      likelihood: row.ai_likelihood,
+      verdict: (row.ai_verdict as AIDetectionVerdict | null) ?? 'Mixed / Possibly AI-Assisted',
+      indicators: (row.ai_indicators as string[]) ?? [],
+      explanation: row.ai_explanation ?? '',
     } : undefined,
-    originality: (row as any).originality_score != null ? {
-      score: (row as any).originality_score,
-      flagged: !!(row as any).originality_flagged,
-      note: (row as any).originality_note ?? '',
-      matchedEssayId: (row as any).originality_matched_essay_id ?? undefined,
-      similarityPercent: (row as any).originality_similarity_percent ?? undefined,
+    originality: row.originality_score != null ? {
+      score: row.originality_score,
+      flagged: !!row.originality_flagged,
+      note: row.originality_note ?? '',
+      matchedEssayId: row.originality_matched_essay_id ?? undefined,
+      similarityPercent: row.originality_similarity_percent ?? undefined,
     } : undefined,
-    aiPenaltyApplied: (row as any).ai_penalty_applied ?? undefined,
-    preAIPenaltyScore: (row as any).pre_ai_penalty_score ?? undefined,
-    examMode: (row as any).exam_mode ?? false,
-    timeLimitSeconds: (row as any).time_limit_seconds ?? undefined,
-    timeTakenSeconds: (row as any).time_taken_seconds ?? undefined,
-    revisedFromScoreId: (row as any).revised_from_score_id ?? undefined,
+    aiPenaltyApplied: row.ai_penalty_applied ?? undefined,
+    preAIPenaltyScore: row.pre_ai_penalty_score ?? undefined,
+    examMode: row.exam_mode ?? false,
+    timeLimitSeconds: row.time_limit_seconds ?? undefined,
+    timeTakenSeconds: row.time_taken_seconds ?? undefined,
+    revisedFromScoreId: row.revised_from_score_id ?? undefined,
   }
 }
 
@@ -690,9 +690,9 @@ function rowToCommunityPost(
     likedByMe: likedPostIds.has(row.id),
     isOwn: row.user_id === currentUserId,
     createdAt: new Date(row.created_at ?? Date.now()),
-    reviewRequested: (row as any).review_requested ?? false,
-    reviewDimensions: ((row as any).review_dimensions as ScoreDimension[]) ?? [],
-    reviewCount: (row as any).review_count ?? 0,
+    reviewRequested: row.review_requested ?? false,
+    reviewDimensions: (row.review_dimensions as ScoreDimension[]) ?? [],
+    reviewCount: row.review_count ?? 0,
   }
 }
 
@@ -781,7 +781,7 @@ export async function createCommunityPost(
       total_score: post.totalScore,
       review_requested: post.reviewRequested ?? false,
       review_dimensions: post.reviewDimensions ?? [],
-    } as any)
+    })
     .select('id')
     .single()
 
