@@ -60,6 +60,7 @@ together.
 - **Detailed Feedback** — Strengths, weaknesses, and actionable improvement suggestions
 - **Progress Analytics** — Score progression charts, dimension trends, writing frequency
 - **Daily Writing Prompts** — 20+ Philippine-focused prompts across 8 categories
+- **Email Reminders** — Weekly progress digest, plus a one-time "haven't written in a few days?" nudge if a student goes quiet (both opt-in via one Email Notifications toggle)
 - **Essay History** — Searchable, filterable history of all scored essays, live-updated via Supabase Realtime
 - **Anonymous Leaderboard** — Optional peer ranking with auto-generated aliases
 - **Dark Mode** — Full light/dark/system theme support

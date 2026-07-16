@@ -27,6 +27,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceRoleClient } from '@/lib/supabase/server'
 import { getWeakestDimension, DIMENSION_DESCRIPTIONS, formatDate } from '@/lib/utils'
+import { sendViaEmailJs, escapeHtml, getEmailJsCredentialsFromEnv } from '@/lib/email'
 import type { ScoreDimension } from '@/types'
 
 export const runtime = 'nodejs'
@@ -34,48 +35,6 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://pasaboost.vercel.app'
-
-const EMAILJS_API_URL = 'https://api.emailjs.com/api/v1.0/email/send'
-
-interface EmailJsSendResult {
-  ok: boolean
-  status: number
-  body: string
-}
-
-// EmailJS's REST endpoint is the same one their browser SDK hits — from a
-// server we skip the origin check by passing the Private Key as
-// `accessToken` alongside the Public Key. The template referenced by
-// EMAILJS_TEMPLATE_ID must have a variable (we use `html_body`) with
-// "Insert as HTML" enabled in the EmailJS template editor, or the markup
-// below will show up as literal tags in the inbox instead of rendering.
-async function sendViaEmailJs(params: {
-  serviceId: string
-  templateId: string
-  publicKey: string
-  privateKey: string
-  to: string
-  subject: string
-  html: string
-}): Promise<EmailJsSendResult> {
-  const res = await fetch(EMAILJS_API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      service_id: params.serviceId,
-      template_id: params.templateId,
-      user_id: params.publicKey,
-      accessToken: params.privateKey,
-      template_params: {
-        to_email: params.to,
-        subject: params.subject,
-        html_body: params.html,
-      },
-    }),
-  })
-  const body = await res.text()
-  return { ok: res.ok, status: res.status, body }
-}
 
 interface RecipientData {
   userId: string
@@ -153,10 +112,6 @@ function buildEmailHtml(data: RecipientData): string {
   </div>`
 }
 
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string))
-}
-
 async function handleSend(req: NextRequest): Promise<NextResponse> {
   const cronSecret = process.env.CRON_SECRET
   const authHeader = req.headers.get('authorization')
@@ -169,11 +124,8 @@ async function handleSend(req: NextRequest): Promise<NextResponse> {
     console.warn('send-weekly-emails: CRON_SECRET is not set — this route is currently unprotected.')
   }
 
-  const serviceId = process.env.EMAILJS_SERVICE_ID
-  const templateId = process.env.EMAILJS_TEMPLATE_ID
-  const publicKey = process.env.EMAILJS_PUBLIC_KEY
-  const privateKey = process.env.EMAILJS_PRIVATE_KEY
-  if (!serviceId || !templateId || !publicKey || !privateKey) {
+  const creds = getEmailJsCredentialsFromEnv()
+  if (!creds) {
     return NextResponse.json(
       {
         success: false,
@@ -243,11 +195,7 @@ async function handleSend(req: NextRequest): Promise<NextResponse> {
         weakest: weakestResult ? { dimension: weakestResult.dimension, averageScore: weakestResult.averageScore } : null,
       }
 
-      const result = await sendViaEmailJs({
-        serviceId,
-        templateId,
-        publicKey,
-        privateKey,
+      const result = await sendViaEmailJs(creds, {
         to: email,
         subject: buildSubject(data),
         html: buildEmailHtml(data),

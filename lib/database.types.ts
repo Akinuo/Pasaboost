@@ -490,6 +490,7 @@ export type Database = {
           exam_date: string | null
           exam_type: string | null
           id: string
+          last_inactivity_reminder_sent_at: string | null
           leaderboard_alias: string | null
           leaderboard_enabled: boolean | null
           photo_url: string | null
@@ -501,6 +502,7 @@ export type Database = {
           exam_date?: string | null
           exam_type?: string | null
           id: string
+          last_inactivity_reminder_sent_at?: string | null
           leaderboard_alias?: string | null
           leaderboard_enabled?: boolean | null
           photo_url?: string | null
@@ -512,6 +514,7 @@ export type Database = {
           exam_date?: string | null
           exam_type?: string | null
           id?: string
+          last_inactivity_reminder_sent_at?: string | null
           leaderboard_alias?: string | null
           leaderboard_enabled?: boolean | null
           photo_url?: string | null
