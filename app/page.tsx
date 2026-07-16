@@ -240,13 +240,14 @@ export default function LandingPage() {
               {/* Single connector line from the first circle's center to the
                   last circle's center. Circles (z-10, opaque bg) sit on top,
                   so the line reads as passing behind every circle in between
-                  with no per-gap math to keep in sync. left-5 = circle radius
-                  (w-10 → 1.25rem); the width trims off one item's width
-                  (lg:w-52 → 13rem) so the line ends at the last circle's
-                  center rather than the row's right edge. Keep those two in
-                  sync if the circle size or item width ever changes. */}
+                  with no per-gap math to keep in sync. left-5/right-5 (1.25rem
+                  = circle radius, w-10) work because step 1 is left-aligned
+                  (circle flush against the row's left edge) and the last step
+                  is right-aligned below (circle flush against the row's right
+                  edge) — both circle centers land exactly 1.25rem in from
+                  their respective edge. */}
               <motion.div
-                className="hidden lg:block absolute top-5 left-5 w-[calc(100%-13rem)] h-px bg-border origin-left"
+                className="hidden lg:block absolute top-5 left-5 right-5 h-px bg-border origin-left"
                 aria-hidden="true"
                 initial={{ scaleX: 0 }}
                 whileInView={{ scaleX: 1 }}
@@ -256,7 +257,7 @@ export default function LandingPage() {
               {STEPS.map((step, i) => (
                 <motion.div
                   key={step.n}
-                  className="text-center lg:text-left lg:w-52"
+                  className={`text-center lg:w-52 ${i === STEPS.length - 1 ? 'lg:text-right' : 'lg:text-left'}`}
                   initial={{ opacity: 0, y: 16 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.1 }}
