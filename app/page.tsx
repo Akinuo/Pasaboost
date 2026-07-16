@@ -235,36 +235,44 @@ export default function LandingPage() {
             <p className="eyebrow mb-3">How it works</p>
             <h2 className="text-3xl lg:text-4xl font-display font-semibold text-foreground">Four steps, every essay</h2>
           </div>
-          <div className="flex flex-col items-center lg:flex-row lg:items-start lg:justify-center gap-10 lg:gap-6">
-            {STEPS.map((step, i) => (
+          <div className="lg:w-fit lg:mx-auto">
+            <div className="relative flex flex-col items-center lg:flex-row lg:items-start gap-10 lg:gap-6">
+              {/* Single connector line from the first circle's center to the
+                  last circle's center. Circles (z-10, opaque bg) sit on top,
+                  so the line reads as passing behind every circle in between
+                  with no per-gap math to keep in sync. left-5 = circle radius
+                  (w-10 → 1.25rem); the width trims off one item's width
+                  (lg:w-52 → 13rem) so the line ends at the last circle's
+                  center rather than the row's right edge. Keep those two in
+                  sync if the circle size or item width ever changes. */}
               <motion.div
-                key={step.n}
-                className="relative text-center lg:text-left lg:w-52"
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
+                className="hidden lg:block absolute top-5 left-5 w-[calc(100%-13rem)] h-px bg-border origin-left"
+                aria-hidden="true"
+                initial={{ scaleX: 0 }}
+                whileInView={{ scaleX: 1 }}
+                transition={{ duration: 0.6, delay: 0.35 }}
                 viewport={{ once: true }}
-              >
-                {i < STEPS.length - 1 && (
-                  <motion.div
-                    className="hidden lg:block absolute top-5 left-10 w-[calc(100%+0.25rem)] h-px bg-border origin-left"
-                    aria-hidden="true"
-                    initial={{ scaleX: 0 }}
-                    whileInView={{ scaleX: 1 }}
-                    transition={{ duration: 0.5, delay: i * 0.1 + 0.35 }}
-                    viewport={{ once: true }}
-                  />
-                )}
+              />
+              {STEPS.map((step, i) => (
                 <motion.div
-                  className="glow-primary relative z-10 inline-flex items-center justify-center w-10 h-10 rounded-full bg-background border-2 border-primary text-primary font-display font-semibold text-sm mb-4"
-                  whileHover={{ y: -3, transition: { duration: 0.2 } }}
+                  key={step.n}
+                  className="text-center lg:text-left lg:w-52"
+                  initial={{ opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  viewport={{ once: true }}
                 >
-                  {step.n}
+                  <motion.div
+                    className="glow-primary relative z-10 inline-flex items-center justify-center w-10 h-10 rounded-full bg-background border-2 border-primary text-primary font-display font-semibold text-sm mb-4"
+                    whileHover={{ y: -3, transition: { duration: 0.2 } }}
+                  >
+                    {step.n}
+                  </motion.div>
+                  <h3 className="font-display font-semibold text-foreground mb-1.5">{step.title}</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{step.desc}</p>
                 </motion.div>
-                <h3 className="font-display font-semibold text-foreground mb-1.5">{step.title}</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">{step.desc}</p>
-              </motion.div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </section>
