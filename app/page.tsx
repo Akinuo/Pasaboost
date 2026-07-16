@@ -35,6 +35,7 @@ const STEPS = [
   { n: '01', title: 'Write', desc: "Start from today's prompt, or paste in an essay you already wrote." },
   { n: '02', title: 'Get scored', desc: 'AI grades all 5 rubric dimensions in seconds — the same way a reviewer would.' },
   { n: '03', title: 'Revise', desc: 'Read the paragraph rewrites, ask follow-up questions, then resubmit and watch the score move.' },
+  { n: '04', title: 'Drill', desc: "Get short, focused exercises on your lowest-scoring rubric dimension until it's not your weak spot anymore." },
 ]
 
 const RUBRIC = [
@@ -229,16 +230,16 @@ export default function LandingPage() {
       </section>
 
       <section className="py-24">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl mx-auto text-center mb-16">
             <p className="eyebrow mb-3">How it works</p>
-            <h2 className="text-3xl lg:text-4xl font-display font-semibold text-foreground">Three steps, every essay</h2>
+            <h2 className="text-3xl lg:text-4xl font-display font-semibold text-foreground">Four steps, every essay</h2>
           </div>
-          <div className="flex flex-col items-center sm:flex-row sm:items-start sm:justify-center gap-10 sm:gap-6">
+          <div className="flex flex-col items-center lg:flex-row lg:items-start lg:justify-center gap-10 lg:gap-6">
             {STEPS.map((step, i) => (
               <motion.div
                 key={step.n}
-                className="relative text-center sm:text-left sm:w-56"
+                className="relative text-center lg:text-left lg:w-52"
                 initial={{ opacity: 0, y: 16 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1 }}
@@ -246,7 +247,7 @@ export default function LandingPage() {
               >
                 {i < STEPS.length - 1 && (
                   <motion.div
-                    className="hidden sm:block absolute top-5 left-10 w-[calc(100%+0.25rem)] h-px bg-border origin-left"
+                    className="hidden lg:block absolute top-5 left-10 w-[calc(100%+0.25rem)] h-px bg-border origin-left"
                     aria-hidden="true"
                     initial={{ scaleX: 0 }}
                     whileInView={{ scaleX: 1 }}
