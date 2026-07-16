@@ -234,36 +234,38 @@ export default function LandingPage() {
             <p className="eyebrow mb-3">How it works</p>
             <h2 className="text-3xl lg:text-4xl font-display font-semibold text-foreground">Three steps, every essay</h2>
           </div>
-          <div className="grid sm:grid-cols-3 gap-10 sm:gap-6">
-            {STEPS.map((step, i) => (
-              <motion.div
-                key={step.n}
-                className="relative text-center sm:text-left"
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
-                viewport={{ once: true }}
-              >
-                {i < STEPS.length - 1 && (
-                  <motion.div
-                    className="hidden sm:block absolute top-5 left-10 w-[calc(100%+0.25rem)] h-px bg-border origin-left"
-                    aria-hidden="true"
-                    initial={{ scaleX: 0 }}
-                    whileInView={{ scaleX: 1 }}
-                    transition={{ duration: 0.5, delay: i * 0.1 + 0.35 }}
-                    viewport={{ once: true }}
-                  />
-                )}
+          <div className="max-w-3xl mx-auto">
+            <div className="grid sm:grid-cols-3 gap-10 sm:gap-6">
+              {STEPS.map((step, i) => (
                 <motion.div
-                  className="glow-primary relative z-10 inline-flex items-center justify-center w-10 h-10 rounded-full bg-background border-2 border-primary text-primary font-display font-semibold text-sm mb-4"
-                  whileHover={{ y: -3, transition: { duration: 0.2 } }}
+                  key={step.n}
+                  className="relative text-center sm:text-left"
+                  initial={{ opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  viewport={{ once: true }}
                 >
-                  {step.n}
+                  {i < STEPS.length - 1 && (
+                    <motion.div
+                      className="hidden sm:block absolute top-5 left-10 w-[calc(100%+0.25rem)] h-px bg-border origin-left"
+                      aria-hidden="true"
+                      initial={{ scaleX: 0 }}
+                      whileInView={{ scaleX: 1 }}
+                      transition={{ duration: 0.5, delay: i * 0.1 + 0.35 }}
+                      viewport={{ once: true }}
+                    />
+                  )}
+                  <motion.div
+                    className="glow-primary relative z-10 inline-flex items-center justify-center w-10 h-10 rounded-full bg-background border-2 border-primary text-primary font-display font-semibold text-sm mb-4"
+                    whileHover={{ y: -3, transition: { duration: 0.2 } }}
+                  >
+                    {step.n}
+                  </motion.div>
+                  <h3 className="font-display font-semibold text-foreground mb-1.5">{step.title}</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{step.desc}</p>
                 </motion.div>
-                <h3 className="font-display font-semibold text-foreground mb-1.5">{step.title}</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">{step.desc}</p>
-              </motion.div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </section>
