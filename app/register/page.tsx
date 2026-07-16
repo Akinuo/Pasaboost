@@ -199,12 +199,6 @@ export default function RegisterPage() {
                 ))}
               </div>
             </div>
-            <div className="mt-4 p-5 rounded-lg border border-border bg-card">
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                <strong className="text-foreground">Research note:</strong> PasaBoost is part of a thesis
-                measuring 8-week essay improvement. Your anonymized scores may be used as research data with your consent.
-              </p>
-            </div>
           </motion.div>
         </div>
       </div>
