@@ -898,7 +898,7 @@ function EssayEditorInner() {
                         className="h-full rounded-full"
                         style={{
                           width: `${aiDetection.likelihood}%`,
-                          backgroundColor: aiDetection.likelihood >= 65 ? '#ef4444' : aiDetection.likelihood >= 35 ? '#f59e0b' : '#10b981',
+                          backgroundColor: aiDetection.likelihood >= 65 ? 'hsl(var(--score-poor))' : aiDetection.likelihood >= 35 ? 'hsl(var(--score-average))' : 'hsl(var(--score-excellent))',
                         }}
                       />
                     </div>

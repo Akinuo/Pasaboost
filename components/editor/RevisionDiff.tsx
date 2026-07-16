@@ -18,11 +18,11 @@ export default function RevisionDiff({ original, revised }: { original: string; 
   return (
     <div>
       <div className="flex items-center gap-3 mb-3 text-xs">
-        <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-          <span className="w-2 h-2 rounded-full bg-emerald-500" /> {addedCount} words added
+        <span className="flex items-center gap-1 text-[hsl(var(--score-excellent))]">
+          <span className="w-2 h-2 rounded-full bg-[hsl(var(--score-excellent))]" /> {addedCount} words added
         </span>
-        <span className="flex items-center gap-1 text-red-600 dark:text-red-400">
-          <span className="w-2 h-2 rounded-full bg-red-500" /> {removedCount} words removed
+        <span className="flex items-center gap-1 text-[hsl(var(--score-poor))]">
+          <span className="w-2 h-2 rounded-full bg-[hsl(var(--score-poor))]" /> {removedCount} words removed
         </span>
       </div>
       <div className="p-4 rounded-lg border border-border bg-background text-sm leading-relaxed whitespace-pre-wrap">
@@ -30,13 +30,13 @@ export default function RevisionDiff({ original, revised }: { original: string; 
           if (tok.type === 'same') return <span key={idx}>{tok.text}</span>
           if (tok.type === 'added') {
             return (
-              <span key={idx} className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 rounded-sm">
+              <span key={idx} className="bg-[hsl(var(--score-excellent)/0.15)] text-[hsl(var(--score-excellent))] rounded-sm">
                 {tok.text}
               </span>
             )
           }
           return (
-            <span key={idx} className="bg-red-500/15 text-red-700 dark:text-red-400 line-through decoration-red-500/50 rounded-sm">
+            <span key={idx} className="bg-[hsl(var(--score-poor)/0.15)] text-[hsl(var(--score-poor))] line-through decoration-[hsl(var(--score-poor)/0.5)] rounded-sm">
               {tok.text}
             </span>
           )
